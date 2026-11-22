@@ -44,6 +44,28 @@ Team members: Yusuf Çakır, Yusuf Enes Kütük, Efe Deniz Kahvecioğlu.
 
 > **Warning:** `docker compose down -v` deletes the database volume; the init script runs again only on a fresh volume.
 
+5. Start the backend with the `dev` profile. It reads the database settings from the `.env` file in the repository root.
+
+   ```shell
+   cd backend
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+   ```
+
+   On Windows, use the `mvnw.cmd` wrapper instead. In PowerShell, quote the property:
+
+   ```powershell
+   cd backend
+   .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+   ```
+
+6. Check that the application is up:
+
+   ```shell
+   curl http://localhost:8080/actuator/health
+   ```
+
+   The response contains `"status":"UP"`.
+
 Further setup steps will be added as the project infrastructure is completed.
 
 ## Repository structure

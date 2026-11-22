@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: end-of-day-backend
+  config:
+    # Reads the repository .env file (KEY=VALUE) whether the application is
+    # started from the backend directory or from the repository root.
+    import: "optional:file:../.env[.properties],optional:file:.env[.properties]"
+  datasource:
+    url: "jdbc:mysql://localhost:${MYSQL_PORT:3306}/end_of_day?characterEncoding=UTF-8&connectionCollation=utf8mb4_turkish_ci&connectionTimeZone=Europe/Istanbul"
+    username: eod_app
+    password: ${EOD_APP_PASSWORD}
+  flyway:
+    url: ${spring.datasource.url}
+    user: eod_owner
+    password: ${EOD_OWNER_PASSWORD}
+    locations: classpath:db/migration
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
