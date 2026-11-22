@@ -1,1 +1,13 @@
-# Settings for the Testcontainers-based test profile.
+# Settings for the Testcontainers-based test profile. Database connection
+# properties are supplied by the test support classes.
+spring:
+  main:
+    banner-mode: off
+  flyway:
+    locations: classpath:db/migration
+
+logging:
+  level:
+    root: WARN
+    org.testcontainers: INFO
+    tc: INFO

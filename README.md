@@ -66,6 +66,16 @@ Team members: Yusuf Çakır, Yusuf Enes Kütük, Efe Deniz Kahvecioğlu.
 
    The response contains `"status":"UP"`.
 
+### Running tests
+
+Docker Desktop must be running. From the `backend` directory, run:
+
+```shell
+./mvnw verify
+```
+
+On Windows, use `.\mvnw.cmd verify`. The build checks the code formatting, runs all tests and checks coverage. Integration tests start a throwaway MySQL container with the same image, server settings and init script as `compose.yaml`, so they do not use or change the local database.
+
 Further setup steps will be added as the project infrastructure is completed.
 
 ## Repository structure
