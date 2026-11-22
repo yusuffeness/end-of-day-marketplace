@@ -20,6 +20,7 @@ __pycache__/
 *.pyc
 .venv/
 .ruff_cache/
+*.egg-info/
 datagen/out/
 
 # Secrets (.env.example is tracked)

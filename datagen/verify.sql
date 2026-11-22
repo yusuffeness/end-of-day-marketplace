@@ -1,0 +1,5 @@
+-- Consistency checks run after loading generated data into end_of_day.
+--
+-- Every query in this file looks for rows that break a rule of the data model.
+-- Every query must return zero rows; any returned row points to a defect in the
+-- generator or in the loaded data.
