@@ -29,6 +29,20 @@ Team members: Yusuf Çakır, Yusuf Enes Kütük, Efe Deniz Kahvecioğlu.
 ## Getting started
 
 1. Copy `.env.example` to `.env` and replace the placeholder passwords with your own values.
+2. If port 3306 is already in use on your machine (for example by a local MySQL installation), set `MYSQL_PORT` in `.env` to a free port such as `3307`.
+3. Start the database:
+
+   ```shell
+   docker compose up -d
+   ```
+
+4. Check that the `mysql` service reports `healthy`:
+
+   ```shell
+   docker compose ps
+   ```
+
+> **Warning:** `docker compose down -v` deletes the database volume; the init script runs again only on a fresh volume.
 
 Further setup steps will be added as the project infrastructure is completed.
 

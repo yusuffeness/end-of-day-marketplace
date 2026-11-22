@@ -1,0 +1,36 @@
+name: end-of-day
+
+services:
+  mysql:
+    container_name: eod-mysql
+    image: mysql:8.4.13
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is not set; copy .env.example to .env}
+      EOD_OWNER_PASSWORD: ${EOD_OWNER_PASSWORD:?EOD_OWNER_PASSWORD is not set; copy .env.example to .env}
+      EOD_APP_PASSWORD: ${EOD_APP_PASSWORD:?EOD_APP_PASSWORD is not set; copy .env.example to .env}
+      EOD_REPORT_PASSWORD: ${EOD_REPORT_PASSWORD:?EOD_REPORT_PASSWORD is not set; copy .env.example to .env}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_turkish_ci
+      - --default-time-zone=+03:00
+      - --event-scheduler=ON
+      - --local-infile=ON
+      # With binary logging enabled, accounts without SUPER (such as eod_owner)
+      # cannot create triggers or stored routines. Local development and tests
+      # do not need the binary log, so it is turned off.
+      - --disable-log-bin
+    volumes:
+      - eod-mysql-data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping --protocol=TCP -h 127.0.0.1 -u root --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  eod-mysql-data:
