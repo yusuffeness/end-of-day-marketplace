@@ -1,0 +1,12 @@
+# Code owners are requested for review automatically.
+#
+# The last matching pattern wins, so general rules come first and more specific
+# rules follow. The database rules must stay below any general backend/ rule,
+# otherwise backend/ would override them.
+
+# Default owner
+*                                       @yusuffeness
+
+# Database: migrations, seed data, initialization and analytics
+backend/src/main/resources/db/          @yusuffeness
+database/                               @yusuffeness
