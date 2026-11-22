@@ -58,11 +58,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * Adds the error code and a Turkish detail to the problem details that Spring MVC creates for its own exceptions,
      * such as validation failures, unreadable request bodies and unknown paths.
+     *
+     * <p>The framework passes a {@code null} body to this method and builds the problem detail inside the super
+     * implementation, so the body is adjusted after that call.
      */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
             Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
-        if (body instanceof ProblemDetail problemDetail) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        if (response != null && response.getBody() instanceof ProblemDetail problemDetail) {
             if (statusCode.value() == HttpStatus.BAD_REQUEST.value()) {
                 problemDetail.setDetail(BAD_REQUEST_DETAIL);
                 problemDetail.setProperty(CODE_PROPERTY, BAD_REQUEST_CODE);
@@ -75,7 +79,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 problemDetail.setProperty(CODE_PROPERTY, INTERNAL_ERROR_CODE);
             }
         }
-        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        return response;
     }
 
     private static ResponseEntity<ProblemDetail> problem(HttpStatusCode status, String code, String detail) {
