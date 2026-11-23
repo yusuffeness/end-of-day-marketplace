@@ -1,15 +1,11 @@
 # Contributing
 
-## Branching
+## Workflow
 
-- The project follows GitHub Flow. `main` is protected and always deployable.
-- Create a short-lived branch from `main` for every change, using one of these prefixes:
-  - `feat/...` for new features
-  - `fix/...` for bug fixes
-  - `docs/...` for documentation
-  - `test/...` for tests
-  - `chore/...` for tooling and maintenance
-  - `refactor/...` for refactoring without behavior changes
+- Changes are committed directly to `main` by the maintainer.
+- Every push runs CI.
+- Run `./mvnw verify` before pushing.
+- A red CI build is fixed before any other work.
 
 ## Commit messages
 
@@ -25,14 +21,6 @@ feat(order): lock listings in id order before decrementing stock
 fix(pickup): reject delivery outside the pickup window
 docs: describe local setup
 ```
-
-## Pull requests
-
-- Every change reaches `main` through a pull request.
-- The description explains what changed, why, and how it was tested.
-- Do not merge until CI is green.
-- Use squash merge.
-- Delete the branch after it is merged.
 
 ## Code style
 

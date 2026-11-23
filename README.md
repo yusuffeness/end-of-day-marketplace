@@ -82,7 +82,7 @@ Further setup steps will be added as the project infrastructure is completed.
 
 | Path | Description |
 | --- | --- |
-| `.github/` | CI workflow, issue and pull request templates, code owners and Dependabot configuration |
+| `.github/` | CI workflow, issue templates and code owners |
 | `backend/` | Spring Boot application, including Flyway migrations, seed data and the static frontend |
 | `database/` | Database and account initialization scripts and analytical queries |
 | `datagen/` | Python generator for large data sets and its verification queries |
@@ -92,7 +92,7 @@ Further setup steps will be added as the project infrastructure is completed.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for branching, commit, pull request and code style guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow, commit and code style guidelines.
 
 ## License
 
