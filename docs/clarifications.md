@@ -16,5 +16,9 @@ This file records details the project report left open and how they were resolve
 | 3, 4 | Text lengths | column lengths chosen as listed in V1__create_schema.sql; the report fixed names and types only. |
 | 4.4 | Pickup code format | six digits. |
 | 3, 4 | Code-valued columns | status and type columns use utf8mb4_bin so only the exact uppercase codes from the report are accepted. |
+| 5.1 | Marking orders as not picked up | a database event runs every 5 minutes and marks confirmed orders whose pickup window has ended; stock and refunds are untouched. |
+| 5.1 | Status transition rule on inserts | transition rules apply to updates only so historical data in final states can be bulk-loaded. |
+| 7.3 | Report views | v_order_summary, v_business_sales, v_payment_summary; no personal fields. |
+| 7.3 | Application delete privilege | only on KULLANICI_ROL, for revoking roles; all other records are deactivated, never deleted (report 5.2). |
 
 Later entries are added when a detail is decided.
