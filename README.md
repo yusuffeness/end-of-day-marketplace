@@ -78,6 +78,40 @@ On Windows, use `.\mvnw.cmd verify`. The build checks the code formatting, runs 
 
 Further setup steps will be added as the project infrastructure is completed.
 
+## Demo data
+
+The `dev` profile loads fictional demo data from `backend/src/main/resources/db/seed/R__seed_demo_data.sql`. It is a
+Flyway repeatable migration: it runs after the schema migrations and again whenever the file changes. The `test` and
+`perf` profiles never load it.
+
+> **Warning:** the demo data file first deletes all rows of every table except `ROL`, including data you created
+> yourself.
+
+All demo accounts use the password `GunSonu2026!`. Useful accounts:
+
+| Role | Email |
+| --- | --- |
+| Administrator | `selin.aydemir@ornek.test` |
+| Business owner (two branches) | `mehmet.karaca@ornek.test` |
+| Customer | `ahmet.yilmaz@ornek.test` |
+
+The demo data contains September and October 2026 history with fixed dates and a live part relative to the time it is
+loaded: every approved business has an active listing whose pickup window opens 3 hours later, and one confirmed order
+waits for pickup. The live part is valid for a few hours only; after the window ends, the scheduled event marks the open
+order as not picked up.
+
+To reload the demo data before a demo, reset the local database:
+
+```shell
+docker compose down -v
+docker compose up -d
+docker compose ps        # wait until mysql is healthy
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+On Windows PowerShell, start the backend with `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"`.
+
 ## Repository structure
 
 | Path | Description |
