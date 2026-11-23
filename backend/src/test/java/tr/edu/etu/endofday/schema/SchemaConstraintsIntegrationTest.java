@@ -666,6 +666,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
         long chargeId = data.createCharge(orderId);
         Map<String, Object> row = data.paymentRow(orderId);
         row.put("islem_turu", "TAHSILAT");
+        row.put("durum", "BASARISIZ"); // keeps the order at a single successful charge (EOD-002)
         row.put("kaynak_islem_id", chargeId);
 
         assertRejectedByCheck("chk_odeme_islemi_kaynak_islem", () -> data.insertPayment(row));
@@ -744,6 +745,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
         first.put("istek_no", "istek-tekrar");
         Map<String, Object> second = data.paymentRow(orderId);
         second.put("istek_no", "istek-tekrar");
+        second.put("durum", "BASARISIZ"); // keeps the order at a single successful charge (EOD-002)
         data.insertPayment(first);
 
         assertRejectedAsDuplicate("uq_odeme_islemi_istek_no", () -> data.insertPayment(second));
@@ -793,7 +795,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
         long orderId = data.createOrder();
         Map<String, Object> row = data.pickupRow(orderId);
         row.put("teslim_zamani", BASE_TIME.plusMinutes(15));
-        row.put("dogrulayan_id", data.createUser());
+        row.put("dogrulayan_id", data.businessOwnerOfOrder(orderId));
 
         data.insertPickup(row);
 
@@ -811,9 +813,10 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
 
     @Test
     void rejectsVerifierWithoutPickupTime() {
-        Map<String, Object> row = data.pickupRow(data.createOrder());
+        long orderId = data.createOrder();
+        Map<String, Object> row = data.pickupRow(orderId);
         row.put("teslim_zamani", null);
-        row.put("dogrulayan_id", data.createUser());
+        row.put("dogrulayan_id", data.businessOwnerOfOrder(orderId));
 
         assertRejectedByCheck("chk_teslim_alma_verification", () -> data.insertPickup(row));
     }
@@ -912,12 +915,12 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
         assertRejectedByForeignKey("fk_teslim_alma_dogrulayan_id", () -> data.insertPickup(row));
     }
 
-    // DEGERLENDIRME
+    // DEGERLENDIRME (only delivered orders can be reviewed, EOD-006)
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(ints = {1, 5})
     void acceptsRatingsAtBothEndsOfTheScale(int rating) {
-        long orderId = data.createOrder();
+        long orderId = data.createDeliveredOrder();
         Map<String, Object> row = data.reviewRow(orderId);
         row.put("puan", rating);
 
@@ -929,7 +932,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
     @ParameterizedTest(name = "{0}")
     @ValueSource(ints = {0, 6})
     void rejectsRatingOutsideOneToFive(int rating) {
-        Map<String, Object> row = data.reviewRow(data.createOrder());
+        Map<String, Object> row = data.reviewRow(data.createDeliveredOrder());
         row.put("puan", rating);
 
         assertRejectedByCheck("chk_degerlendirme_puan_range", () -> data.insertReview(row));
@@ -937,7 +940,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
 
     @Test
     void acceptsReviewWithoutComment() {
-        long orderId = data.createOrder();
+        long orderId = data.createDeliveredOrder();
         Map<String, Object> row = data.reviewRow(orderId);
         row.put("yorum", null);
 
@@ -948,7 +951,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
 
     @Test
     void rejectsSecondReviewForSameOrder() {
-        long orderId = data.createOrder();
+        long orderId = data.createDeliveredOrder();
         data.insertReview(data.reviewRow(orderId));
 
         assertRejectedAsDuplicate("DEGERLENDIRME.PRIMARY", () -> data.insertReview(data.reviewRow(orderId)));
@@ -957,7 +960,7 @@ class SchemaConstraintsIntegrationTest extends IntegrationTest {
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"siparis_id", "puan", "olusturulma_zamani"})
     void rejectsReviewWithoutRequiredValue(String column) {
-        Map<String, Object> row = data.reviewRow(data.createOrder());
+        Map<String, Object> row = data.reviewRow(data.createDeliveredOrder());
         row.put(column, null);
 
         assertRejectedAsNull(column, () -> data.insertReview(row));

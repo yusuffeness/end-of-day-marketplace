@@ -213,6 +213,23 @@ final class SchemaTestData {
         return createOrder(createUser(), createApprovedBusiness());
     }
 
+    /** Creates a delivered order of a new customer at a new approved business. */
+    long createDeliveredOrder() {
+        Map<String, Object> row = orderRow(createUser(), createApprovedBusiness());
+        row.put("durum", "TESLIM_EDILDI");
+        return insertOrder(row);
+    }
+
+    /** The owner of the business that received the given order. */
+    long businessOwnerOfOrder(long orderId) {
+        return jdbcClient
+                .sql("SELECT i.yetkili_id FROM SIPARIS s JOIN ISLETME i ON i.isletme_id = s.isletme_id"
+                        + " WHERE s.siparis_id = :siparis_id")
+                .param("siparis_id", orderId)
+                .query(Long.class)
+                .single();
+    }
+
     // SIPARIS_KALEMI
 
     Map<String, Object> orderItemRow(long orderId, long listingId) {

@@ -32,7 +32,8 @@ class SchemaMatchesReportIntegrationTest extends IntegrationTest {
     void databaseContainsExactlyTheReportTables() {
         List<String> tables = jdbcClient
                 .sql("SELECT TABLE_NAME FROM information_schema.TABLES"
-                        + " WHERE TABLE_SCHEMA = :schema AND TABLE_NAME <> 'flyway_schema_history'")
+                        + " WHERE TABLE_SCHEMA = :schema AND TABLE_TYPE = 'BASE TABLE'"
+                        + " AND TABLE_NAME <> 'flyway_schema_history'")
                 .param("schema", SCHEMA)
                 .query(String.class)
                 .list();
