@@ -1,4 +1,4 @@
-# Gün Sonu (End of Day)
+# Gün Sonu
 
 A B2C marketplace where bakeries, cafés and restaurants sell discounted end-of-day surplus food, which customers order online and pick up within a set time window.
 
