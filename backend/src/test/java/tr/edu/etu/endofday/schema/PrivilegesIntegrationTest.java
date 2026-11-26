@@ -87,7 +87,10 @@ class PrivilegesIntegrationTest extends IntegrationTest {
             strings = {
                 "SELECT COUNT(*) FROM v_order_summary",
                 "SELECT COUNT(*) FROM v_business_sales",
-                "SELECT COUNT(*) FROM v_payment_summary"
+                "SELECT COUNT(*) FROM v_payment_summary",
+                "SELECT COUNT(*) FROM v_review_summary",
+                "SELECT COUNT(*) FROM v_business_status",
+                "SELECT COUNT(*) FROM v_user_registrations"
             })
     void reportAccountCanReadEveryReportView(String query) {
         Long rows = ReportJdbc.client().sql(query).query(Long.class).single();

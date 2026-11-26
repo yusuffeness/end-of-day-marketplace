@@ -36,10 +36,16 @@ import tr.edu.etu.endofday.support.IntegrationTest;
 @Transactional
 class ReportViewsIntegrationTest extends IntegrationTest {
 
-    private static final List<String> VIEWS = List.of("v_order_summary", "v_business_sales", "v_payment_summary");
+    private static final List<String> VIEWS = List.of(
+            "v_order_summary",
+            "v_business_sales",
+            "v_payment_summary",
+            "v_review_summary",
+            "v_business_status",
+            "v_user_registrations");
 
     private static final List<String> PERSONAL_COLUMNS =
-            List.of("ad", "soyad", "eposta", "telefon", "parola_ozeti", "adres");
+            List.of("ad", "soyad", "eposta", "telefon", "parola_ozeti", "adres", "yorum", "kullanici_id");
 
     private static final LocalDateTime MARCH = BASE_TIME.minusHours(1);
     private static final LocalDateTime APRIL = LocalDateTime.of(2026, 4, 10, 12, 0);
@@ -161,7 +167,20 @@ class ReportViewsIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    void schemaContainsExactlyTheThreeReportViews() {
+    void orderSummaryAddsUpTheItemQuantities() {
+        Map<Long, Long> units = new LinkedHashMap<>();
+        jdbcClient
+                .sql("SELECT siparis_id, adet FROM v_order_summary WHERE isletme_id = :id")
+                .param("id", businessId)
+                .query(rs -> {
+                    units.put(rs.getLong("siparis_id"), rs.getLong("adet"));
+                });
+
+        assertThat(units).containsExactlyInAnyOrderEntriesOf(Map.of(order1, 3L, order2, 3L, order3, 0L, order4, 4L));
+    }
+
+    @Test
+    void schemaContainsExactlyTheReportViews() {
         List<String> views = jdbcClient
                 .sql("SELECT TABLE_NAME FROM information_schema.VIEWS WHERE TABLE_SCHEMA = 'end_of_day'")
                 .query(String.class)
@@ -182,7 +201,13 @@ class ReportViewsIntegrationTest extends IntegrationTest {
                         "olusturulma_zamani",
                         "durum",
                         "kalem_sayisi",
-                        "toplam_tutar");
+                        "toplam_tutar",
+                        "adet");
+        assertThat(viewColumns("v_review_summary"))
+                .containsExactly("siparis_id", "isletme_id", "siparis_zamani", "puan", "degerlendirme_zamani");
+        assertThat(viewColumns("v_business_status"))
+                .containsExactly("isletme_id", "isletme_turu", "sehir", "ilce", "onay_durumu", "aktif_mi");
+        assertThat(viewColumns("v_user_registrations")).containsExactly("kayit_tarihi", "aktif_mi");
         assertThat(viewColumns("v_business_sales"))
                 .containsExactly(
                         "isletme_id",
