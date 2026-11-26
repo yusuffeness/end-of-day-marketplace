@@ -22,6 +22,12 @@ public class ApiException extends RuntimeException {
         this.detail = Objects.requireNonNull(detail, "detail");
     }
 
+    /** The generic {@code EOD-404} error for a resource that does not exist or that the user may not see. */
+    public static ApiException notFound() {
+        return new ApiException(
+                HttpStatus.NOT_FOUND, GlobalExceptionHandler.NOT_FOUND_CODE, GlobalExceptionHandler.NOT_FOUND_DETAIL);
+    }
+
     public HttpStatus getStatus() {
         return status;
     }

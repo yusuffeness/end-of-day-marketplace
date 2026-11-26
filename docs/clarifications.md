@@ -20,5 +20,10 @@ This file records details the project report left open and how they were resolve
 | 5.1 | Status transition rule on inserts | transition rules apply to updates only so historical data in final states can be bulk-loaded. |
 | 7.3 | Report views | v_order_summary, v_business_sales, v_payment_summary; no personal fields. |
 | 7.3 | Application delete privilege | only on KULLANICI_ROL, for revoking roles; all other records are deactivated, never deleted (report 5.2). |
+| 7.3 | Password policy | 8 to 72 characters, at most 72 bytes in UTF-8 (BCrypt ignores everything after the 72nd byte), at least one letter and one digit. |
+| 3.1 | Email normalization | addresses are trimmed and lower-cased with Locale.ROOT before they are stored or looked up. |
+| 7.3 | Session contents | the session stores only the user id; the active flag and roles are read from the database on every request, so deactivation and role revocation apply immediately. |
+| 7.3 | Sign-in of an inactive account | the active flag is checked after the password, so only someone who knows the password learns that the account is inactive. |
+| 3.3, 6 | Registration | creates an active account with the role MUSTERI and does not sign the user in. |
 
 Later entries are added when a detail is decided.

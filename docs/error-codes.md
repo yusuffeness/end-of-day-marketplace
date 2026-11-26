@@ -16,8 +16,8 @@ Every API error is returned as an RFC 9457 problem detail (`application/problem+
 
 | Code | HTTP status | When | Detail |
 | --- | --- | --- | --- |
-| `EOD-400` | 400 Bad Request | The request body or parameters are malformed or fail validation. | Gönderilen bilgiler geçersiz. |
-| `EOD-401` | 401 Unauthorized | The request requires a signed-in user. | Bu işlem için giriş yapmalısınız. |
+| `EOD-400` | 400 Bad Request | The request body or parameters are malformed or fail validation. Validation failures list each failed field rule in the `errors` property (see [api.md](api.md#errors)). | Gönderilen bilgiler geçersiz. |
+| `EOD-401` | 401 Unauthorized | The request requires a signed-in user, or the signed-in account was deactivated or removed since the last request (the session is then invalidated). | Bu işlem için giriş yapmalısınız. |
 | `EOD-403` | 403 Forbidden | The signed-in user is not allowed to perform the action, or the CSRF token is missing or invalid. | Bu işlem için yetkiniz yok. |
 | `EOD-404` | 404 Not Found | The requested path or resource does not exist. | İstenen kaynak bulunamadı. |
 | `EOD-500` | 500 Internal Server Error | An unexpected error occurred. The cause is logged on the server and is not included in the response. | Beklenmeyen bir hata oluştu. |
@@ -38,3 +38,14 @@ The database raises these codes from triggers with `SIGNAL SQLSTATE '45000'`; th
 | `EOD-006` | Only a delivered order (TESLIM_EDILDI) can be reviewed. | `trg_degerlendirme_before_insert` | 5.1 |
 | `EOD-007` | A listing is published (AKTIF) only for an approved and active business; updates are checked only when the status changes to AKTIF. | `trg_paket_ilani_before_insert`, `trg_paket_ilani_before_update` | 5.1 |
 | `EOD-008` | Only the owner of the order's business verifies the pickup. | `trg_teslim_alma_before_insert`, `trg_teslim_alma_before_update` | 5.1 |
+
+## Application codes
+
+The services raise these codes; the database does not.
+
+| Code | Rule | Raised by | HTTP status |
+| --- | --- | --- | --- |
+| `EOD-009` | An email address belongs to at most one account, regardless of letter case. Detail: "Bu e-posta adresiyle kayıtlı bir hesap var." | `RegistrationService` (POST /auth/register) | 409 Conflict |
+| `EOD-010` | Sign-in requires a known email address and the matching password; both failures give the same answer. Detail: "E-posta veya parola hatalı." | `LoginService` (POST /auth/login) | 401 Unauthorized |
+| `EOD-011` | An inactive account cannot sign in; reported only after the password matched. Detail: "Hesabınız pasif durumda." | `LoginService` (POST /auth/login) | 403 Forbidden |
+| `EOD-012` | Changing the password requires the current password. Detail: "Mevcut parola hatalı." | `UserService` (PUT /me/password) | 400 Bad Request |
