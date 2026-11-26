@@ -1,5 +1,6 @@
 package tr.edu.etu.endofday.common.error;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -70,7 +71,21 @@ class ErrorHandlingIntegrationTest extends IntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.code").value("EOD-400"))
-                .andExpect(jsonPath("$.detail").value("Gönderilen bilgiler geçersiz."));
+                .andExpect(jsonPath("$.detail").value("Gönderilen bilgiler geçersiz."))
+                .andExpect(jsonPath("$.errors[*].field").value(contains("name", "quantity")))
+                .andExpect(
+                        jsonPath("$.errors[?(@.field == 'quantity')].message").value(contains("Pozitif olmalı.")));
+    }
+
+    @Test
+    void malformedRequestBodyHasNoFieldErrors() throws Exception {
+        mockMvc.perform(post("/api/v1/test-errors/validated")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EOD-400"))
+                .andExpect(jsonPath("$.errors").doesNotExist());
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -102,5 +117,7 @@ class ErrorHandlingIntegrationTest extends IntegrationTest {
         }
     }
 
-    record TestRequest(@NotBlank String name, @Positive int quantity) {}
+    record TestRequest(
+            @NotBlank String name,
+            @Positive(message = "Pozitif olmalı.") int quantity) {}
 }

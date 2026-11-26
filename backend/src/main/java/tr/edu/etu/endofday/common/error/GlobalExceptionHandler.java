@@ -1,6 +1,8 @@
 package tr.edu.etu.endofday.common.error;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.Comparator;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -10,6 +12,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -23,6 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     public static final String CODE_PROPERTY = "code";
+    public static final String ERRORS_PROPERTY = "errors";
 
     static final String BAD_REQUEST_CODE = "EOD-400";
     static final String BAD_REQUEST_DETAIL = "Gönderilen bilgiler geçersiz.";
@@ -70,6 +75,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             if (statusCode.value() == HttpStatus.BAD_REQUEST.value()) {
                 problemDetail.setDetail(BAD_REQUEST_DETAIL);
                 problemDetail.setProperty(CODE_PROPERTY, BAD_REQUEST_CODE);
+                if (ex instanceof MethodArgumentNotValidException invalid) {
+                    problemDetail.setProperty(ERRORS_PROPERTY, fieldErrors(invalid));
+                }
             } else if (statusCode.value() == HttpStatus.NOT_FOUND.value()) {
                 problemDetail.setDetail(NOT_FOUND_DETAIL);
                 problemDetail.setProperty(CODE_PROPERTY, NOT_FOUND_CODE);
@@ -82,9 +90,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return response;
     }
 
+    /** One entry per failed field rule, sorted so that responses are stable. Messages come from the constraints. */
+    private static List<FieldViolation> fieldErrors(MethodArgumentNotValidException ex) {
+        return ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldViolation::of)
+                .sorted(Comparator.comparing(FieldViolation::field).thenComparing(FieldViolation::message))
+                .toList();
+    }
+
     private static ResponseEntity<ProblemDetail> problem(HttpStatusCode status, String code, String detail) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
         problemDetail.setProperty(CODE_PROPERTY, code);
         return ResponseEntity.status(status).body(problemDetail);
+    }
+
+    /** A failed validation rule of a request body field, as returned in the {@code errors} property. */
+    public record FieldViolation(String field, String message) {
+
+        static FieldViolation of(FieldError error) {
+            String message = error.getDefaultMessage() == null ? BAD_REQUEST_DETAIL : error.getDefaultMessage();
+            return new FieldViolation(error.getField(), message);
+        }
     }
 }
