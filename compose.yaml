@@ -32,5 +32,39 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # A second server for the large generated data set (datagen/), so that the
+  # demo data of the dev profile and the performance data never share a
+  # database. Started only with "docker compose --profile perf up -d".
+  mysql-perf:
+    container_name: eod-mysql-perf
+    image: mysql:8.4.13
+    profiles: ["perf"]
+    ports:
+      - "${MYSQL_PERF_PORT:-3308}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is not set; copy .env.example to .env}
+      EOD_OWNER_PASSWORD: ${EOD_OWNER_PASSWORD:?EOD_OWNER_PASSWORD is not set; copy .env.example to .env}
+      EOD_APP_PASSWORD: ${EOD_APP_PASSWORD:?EOD_APP_PASSWORD is not set; copy .env.example to .env}
+      EOD_REPORT_PASSWORD: ${EOD_REPORT_PASSWORD:?EOD_REPORT_PASSWORD is not set; copy .env.example to .env}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_turkish_ci
+      - --default-time-zone=+03:00
+      - --event-scheduler=ON
+      - --local-infile=ON
+      - --disable-log-bin
+      - --innodb-buffer-pool-size=1G
+    volumes:
+      - eod-mysql-perf-data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping --protocol=TCP -h 127.0.0.1 -u root --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   eod-mysql-data:
+  eod-mysql-perf-data:

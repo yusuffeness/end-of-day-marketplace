@@ -9,6 +9,7 @@ description = "Generates large, consistent test data sets for the Gün Sonu data
 requires-python = ">=3.12"
 dependencies = [
     "Faker>=40.0,<41",
+    "mysql-connector-python>=9.1,<10",
 ]
 
 [project.optional-dependencies]
@@ -17,7 +18,7 @@ dev = [
 ]
 
 [tool.setuptools]
-py-modules = ["generate"]
+py-modules = ["generate", "load"]
 
 [tool.ruff]
 line-length = 100
