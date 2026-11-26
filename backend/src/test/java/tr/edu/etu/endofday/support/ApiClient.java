@@ -109,4 +109,15 @@ public final class ApiClient {
     public void useSession(MockHttpSession session) {
         this.session = session;
     }
+
+    /**
+     * A second client with the same cookies and session, like another browser tab. A client is not thread-safe, so
+     * concurrent requests of one user each use their own copy.
+     */
+    public ApiClient copy() {
+        ApiClient copy = new ApiClient(mockMvc);
+        copy.cookies.putAll(cookies);
+        copy.session = session;
+        return copy;
+    }
 }
