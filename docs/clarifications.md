@@ -18,7 +18,7 @@ This file records details the project report left open and how they were resolve
 | 3, 4 | Code-valued columns | status and type columns use utf8mb4_bin so only the exact uppercase codes from the report are accepted. |
 | 5.1 | Marking orders as not picked up | a database event runs every 5 minutes and marks confirmed orders whose pickup window has ended; stock and refunds are untouched. |
 | 5.1 | Status transition rule on inserts | transition rules apply to updates only so historical data in final states can be bulk-loaded. |
-| 7.3 | Report views | v_order_summary, v_business_sales, v_payment_summary; no personal fields. |
+| 7.3 | Report views | v_order_summary, v_business_sales, v_payment_summary (V4); V6 adds the column adet to v_order_summary and the views v_review_summary, v_business_status and v_user_registrations, so that the platform report can be read from views only. No view exposes a name, email address, phone, address, password hash, comment or user id. |
 | 7.3 | Application delete privilege | only on KULLANICI_ROL, for revoking roles; all other records are deactivated, never deleted (report 5.2). |
 | 7.3 | Password policy | 8 to 72 characters, at most 72 bytes in UTF-8 (BCrypt ignores everything after the 72nd byte), at least one letter and one digit. |
 | 3.1 | Email normalization | addresses are trimmed and lower-cased with Locale.ROOT before they are stored or looked up. |
@@ -33,5 +33,11 @@ This file records details the project report left open and how they were resolve
 | 4.4 | Pickup codes | six random digits from SecureRandom; a code that is taken is replaced by a new one. Codes are unique across all orders and are never logged. |
 | 6 | Business owner as customer | an owner may order from their own business; the report does not forbid it. |
 | 6, 7.3 | Visibility of orders and listings | another customer's order answers EOD-404, so its existence is not revealed; an inactive listing is shown only to the owner of its business and to administrators. |
+| 3.4, 6 | Business applications | any signed-in user may apply; the application starts as BEKLEMEDE and active, and the ISLETME_YETKILISI role is granted together with the approval, in one transaction. |
+| 1.3, 3.5 | Listing pickup window | a new listing's window starts in the future, before it ends, and ends on the same calendar day; a window that ends at 00:00 ends on the next day and is rejected. |
+| 6 | Business orders | listed by the day their pickup window starts; the customer is shown as first name and last-name initial with Turkish casing ("Ahmet Y."); email address, phone and pickup code are never part of the answer. |
+| 6, 8.2 | Report figures | an order belongs to a report range by its creation time; units sold exclude cancelled orders only (not picked up orders stay paid); net collection is successful charges minus successful refunds; the ratings are the reviews of the orders in the range. |
+| 7.3 | Platform report connection | the platform report is read through a separate read-only pool of eod_report (password EOD_REPORT_PASSWORD), which is not the application's data source and can read views only. |
+| 6, 7.3 | Administrator safeguards | an administrator cannot deactivate their own account (EOD-027) or revoke their own YONETICI role (EOD-028), so that the platform cannot lose its last administrator by accident. |
 
 Later entries are added when a detail is decided.

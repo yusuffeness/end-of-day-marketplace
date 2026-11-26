@@ -12,7 +12,7 @@
 # X-XSRF-TOKEN header. The handlers below store the current token in the variable xsrf. Sign-in replaces the token
 # and sign-out clears it, so "Fetch the CSRF token" is run again after every sign-out.
 #
-# Endpoints marked "planned" in api.md answer 404 EOD-404 until they are implemented.
+# Requests whose title names a status and a code show the answer the rule gives, for example 409 EOD-005.
 
 @baseUrl = http://localhost:8080/api/v1
 @demoPassword = GunSonu2026!
@@ -22,7 +22,7 @@
 @adminEmail = selin.aydemir@ornek.test
 
 ########################################################################################################################
-# Authentication and account (implemented)
+# Authentication and account
 ########################################################################################################################
 
 ### Fetch the CSRF token
@@ -150,7 +150,7 @@ Content-Type: application/json
 }
 
 ########################################################################################################################
-# Customer: listings and orders (implemented), still signed in as Ahmet Yılmaz
+# Customer: listings, orders and a business application, still signed in as Ahmet Yılmaz
 ########################################################################################################################
 
 ### Purchasable bakery listings in Ankara up to 100 TL (stores the first one for the next requests)
@@ -251,12 +251,13 @@ X-XSRF-TOKEN: {{xsrf}}
   "requestId": "demo-iptal-tekrar-{{$timestamp}}"
 }
 
-### My delivered orders (the demo orders already have reviews, so reviewing them answers 409 EOD-024)
+### My delivered orders (stores one that is already reviewed, canReview false)
 GET {{baseUrl}}/orders?status=TESLIM_EDILDI
 
 > {%
-    if (response.status === 200 && response.body.items.length > 0) {
-        client.global.set("deliveredOrderId", response.body.items[0].id);
+    const reviewed = response.body.items.find(i => i.review !== null);
+    if (reviewed) {
+        client.global.set("deliveredOrderId", reviewed.id);
     }
 %}
 
@@ -270,7 +271,7 @@ X-XSRF-TOKEN: {{xsrf}}
   "comment": "Çok taze ve lezzetliydi."
 }
 
-### Apply for a business (planned)
+### Apply for a business (stays BEKLEMEDE until an administrator decides)
 POST {{baseUrl}}/businesses
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
@@ -284,7 +285,7 @@ X-XSRF-TOKEN: {{xsrf}}
   "phone": "0312 555 60 01"
 }
 
-### Follow my business applications (planned)
+### Follow my business applications
 GET {{baseUrl}}/businesses/mine
 
 ### Sign out
@@ -295,7 +296,7 @@ X-XSRF-TOKEN: {{xsrf}}
 GET {{baseUrl}}/me
 
 ########################################################################################################################
-# Report example 6.1 through the API (implemented)
+# Report example 6.1 through the API
 #
 # Mehmet Karaca publishes 5 packages of 120 TL for 60 TL at Karaca Fırını Kızılay Şubesi with a pickup window that
 # opens 2 minutes later; Ahmet Yılmaz buys 2, so 3 remain; after the window opens Mehmet Karaca verifies the code and
@@ -589,20 +590,17 @@ X-XSRF-TOKEN: {{xsrf}}
     }
 %}
 
-### Find Moda Kahve Evi through its live listing
-GET {{baseUrl}}/listings?city=İstanbul&district=Kadıköy&type=KAFE
+### List my businesses (stores Moda Kahve Evi)
+GET {{baseUrl}}/businesses/mine
 
 > {%
-    const item = response.body.items.find(i => i.businessName === "Moda Kahve Evi");
+    const item = response.body.items.find(i => i.name === "Moda Kahve Evi");
     if (item) {
-        client.global.set("ownBusinessId", item.businessId);
+        client.global.set("ownBusinessId", item.id);
     }
 %}
 
-### List my businesses (planned)
-GET {{baseUrl}}/businesses/mine
-
-### Update the business (planned; the demo values are written back unchanged)
+### Update the business (the demo values are written back unchanged)
 PUT {{baseUrl}}/businesses/{{ownBusinessId}}
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
@@ -615,7 +613,7 @@ X-XSRF-TOKEN: {{xsrf}}
   "phone": "0216 555 30 01"
 }
 
-### Publish a listing (implemented; the pickup window must end in the future)
+### Publish a listing (the pickup window starts in the future and ends on the same day)
 POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
@@ -637,6 +635,25 @@ X-XSRF-TOKEN: {{xsrf}}
     }
 %}
 
+### All listings of the business, active and inactive
+GET {{baseUrl}}/businesses/{{ownBusinessId}}/listings
+
+### Publish a listing whose window ends on the next day: 400 EOD-025
+POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "title": "Gece paketi",
+  "description": "Günün son ürünleri.",
+  "allergenInfo": "Gluten içerir.",
+  "normalPrice": "100.00",
+  "salePrice": "40.00",
+  "totalQuantity": 3,
+  "pickupStart": "2027-06-15T23:00:00",
+  "pickupEnd": "2027-06-16T00:30:00"
+}
+
 ### Publish a listing whose sale price is not discounted: 400 EOD-400
 POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings
 Content-Type: application/json
@@ -653,7 +670,7 @@ X-XSRF-TOKEN: {{xsrf}}
   "pickupEnd": "2027-06-15T21:00:00"
 }
 
-### Change the sale price of the listing (planned)
+### Change the sale price of the listing (existing orders keep their unit price)
 PUT {{baseUrl}}/businesses/{{ownBusinessId}}/listings/{{ownListingId}}/price
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
@@ -662,17 +679,17 @@ X-XSRF-TOKEN: {{xsrf}}
   "salePrice": "55.00"
 }
 
-### Deactivate the listing (planned)
+### Deactivate the listing
 POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings/{{ownListingId}}/deactivate
 X-XSRF-TOKEN: {{xsrf}}
 
-### Today's orders of the business (planned)
+### Today's orders of the business (customer as "Ad S.", no pickup code)
 GET {{baseUrl}}/businesses/{{ownBusinessId}}/orders
 
-### Today's orders that were not picked up (planned)
+### Today's orders that were not picked up
 GET {{baseUrl}}/businesses/{{ownBusinessId}}/orders?status=TESLIM_ALINMADI
 
-### Verify the pickup code of the open demo order (implemented; inside its window, 3 to 4 hours after loading)
+### Verify the pickup code of the open demo order (inside its window, 3 to 4 hours after loading)
 POST {{baseUrl}}/businesses/{{ownBusinessId}}/pickups/verify
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
@@ -681,7 +698,7 @@ X-XSRF-TOKEN: {{xsrf}}
   "code": "476865"
 }
 
-### Sales report of October 2026 (planned)
+### Sales report of October 2026
 GET {{baseUrl}}/businesses/{{ownBusinessId}}/reports?from=2026-10-01&to=2026-10-31
 
 ### Sign out
@@ -689,7 +706,7 @@ POST {{baseUrl}}/auth/logout
 X-XSRF-TOKEN: {{xsrf}}
 
 ########################################################################################################################
-# Administrator (planned): Selin Aydemir
+# Administrator: Selin Aydemir
 ########################################################################################################################
 
 ### Fetch the CSRF token
@@ -725,6 +742,7 @@ X-XSRF-TOKEN: {{xsrf}}
     if (token) {
         client.global.set("xsrf", token);
     }
+    client.global.set("adminId", response.body.id);
 %}
 
 ### Pending business applications (stores the oldest one: Koç Simit Fırını in the demo data)
@@ -741,7 +759,7 @@ GET {{baseUrl}}/admin/business-applications
 POST {{baseUrl}}/admin/businesses/{{applicationId}}/approve
 X-XSRF-TOKEN: {{xsrf}}
 
-### Reject the same application: 409, it is no longer BEKLEMEDE
+### Reject the same application: 409 EOD-026, it is no longer BEKLEMEDE
 POST {{baseUrl}}/admin/businesses/{{applicationId}}/reject
 X-XSRF-TOKEN: {{xsrf}}
 
@@ -796,7 +814,11 @@ GET {{baseUrl}}/admin/listings?status=AKTIF
 POST {{baseUrl}}/admin/listings/{{inspectedListingId}}/deactivate
 X-XSRF-TOKEN: {{xsrf}}
 
-### Platform report of October 2026
+### Revoke the own administrator role: 409 EOD-028
+DELETE {{baseUrl}}/admin/users/{{adminId}}/roles/YONETICI
+X-XSRF-TOKEN: {{xsrf}}
+
+### Platform report of October 2026 (read as eod_report from the views)
 GET {{baseUrl}}/admin/reports/platform?from=2026-10-01&to=2026-10-31
 
 ### Sign out

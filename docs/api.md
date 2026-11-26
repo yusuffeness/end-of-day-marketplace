@@ -94,26 +94,27 @@ Error conditions of planned endpoints that have no code yet are marked *new code
 | GET | `/orders/{id}` | MUSTERI | implemented |
 | POST | `/orders/{id}/cancel` | MUSTERI | implemented |
 | POST | `/orders/{id}/review` | MUSTERI | implemented |
-| POST | `/businesses` | MUSTERI | planned |
-| GET | `/businesses/mine` | MUSTERI | planned |
-| PUT | `/businesses/{id}` | owner of the business | planned |
+| POST | `/businesses` | signed in | implemented |
+| GET | `/businesses/mine` | signed in | implemented |
+| PUT | `/businesses/{id}` | owner of the business | implemented |
+| GET | `/businesses/{id}/listings` | owner of the business | implemented |
 | POST | `/businesses/{id}/listings` | owner of the business | implemented |
-| PUT | `/businesses/{id}/listings/{listingId}/price` | owner of the business | planned |
-| POST | `/businesses/{id}/listings/{listingId}/deactivate` | owner of the business | planned |
-| GET | `/businesses/{id}/orders` | owner of the business | planned |
+| PUT | `/businesses/{id}/listings/{listingId}/price` | owner of the business | implemented |
+| POST | `/businesses/{id}/listings/{listingId}/deactivate` | owner of the business | implemented |
+| GET | `/businesses/{id}/orders` | owner of the business | implemented |
 | POST | `/businesses/{id}/pickups/verify` | owner of the business | implemented |
-| GET | `/businesses/{id}/reports` | owner of the business | planned |
-| GET | `/admin/business-applications` | YONETICI | planned |
-| POST | `/admin/businesses/{id}/approve` | YONETICI | planned |
-| POST | `/admin/businesses/{id}/reject` | YONETICI | planned |
-| GET | `/admin/users` | YONETICI | planned |
-| PUT | `/admin/users/{id}/active` | YONETICI | planned |
-| PUT | `/admin/businesses/{id}/active` | YONETICI | planned |
-| PUT | `/admin/users/{id}/roles/{roleName}` | YONETICI | planned |
-| DELETE | `/admin/users/{id}/roles/{roleName}` | YONETICI | planned |
-| GET | `/admin/listings` | YONETICI | planned |
-| POST | `/admin/listings/{id}/deactivate` | YONETICI | planned |
-| GET | `/admin/reports/platform` | YONETICI | planned |
+| GET | `/businesses/{id}/reports` | owner of the business | implemented |
+| GET | `/admin/business-applications` | YONETICI | implemented |
+| POST | `/admin/businesses/{id}/approve` | YONETICI | implemented |
+| POST | `/admin/businesses/{id}/reject` | YONETICI | implemented |
+| GET | `/admin/users` | YONETICI | implemented |
+| PUT | `/admin/users/{id}/active` | YONETICI | implemented |
+| PUT | `/admin/businesses/{id}/active` | YONETICI | implemented |
+| PUT | `/admin/users/{id}/roles/{roleName}` | YONETICI | implemented |
+| DELETE | `/admin/users/{id}/roles/{roleName}` | YONETICI | implemented |
+| GET | `/admin/listings` | YONETICI | implemented |
+| POST | `/admin/listings/{id}/deactivate` | YONETICI | implemented |
+| GET | `/admin/reports/platform` | YONETICI | implemented |
 
 All paths are relative to `/api/v1`.
 
@@ -465,11 +466,17 @@ Errors: `EOD-006` (409) when the order is not `TESLIM_EDILDI`; `EOD-024` (409) w
 
 ## Businesses
 
+"Owner of the business" means the signed-in user is `ISLETME.yetkili_id` of the business in the path and holds the
+`ISLETME_YETKILISI` role. For every endpoint below with that role, an unknown business answers `EOD-404` and a business
+of another owner answers `EOD-403` (`EOD-008` for the pickup verification); a listing id of another business answers
+`EOD-404`.
+
 ### POST /businesses
 
-Status: planned. Role: MUSTERI.
+Status: implemented. Role: signed in.
 
-Applies for a business. The signed-in user becomes its owner (`yetkili_id`); the application starts as `BEKLEMEDE`.
+Applies for a business. The signed-in user becomes its owner (`yetkili_id`); the application starts as `BEKLEMEDE`
+and active. The `ISLETME_YETKILISI` role is granted only when an administrator approves it.
 
 ```json
 {
@@ -481,6 +488,14 @@ Applies for a business. The signed-in user becomes its owner (`yetkili_id`); the
   "phone": "0312 555 20 01"
 }
 ```
+
+| Field | Rule |
+| --- | --- |
+| `name` | required, at most 100 characters |
+| `type` | required: `FIRIN`, `KAFE` or `RESTORAN` |
+| `city`, `district` | required, at most 50 characters |
+| `address` | required, at most 255 characters |
+| `phone` | required, 7 to 20 characters of digits, spaces, `+`, `(`, `)` and `-` |
 
 Response: `201 Created`
 
@@ -498,19 +513,29 @@ Response: `201 Created`
 }
 ```
 
+Errors: `EOD-400` with field errors.
+
 ### GET /businesses/mine
 
-Status: planned. Role: MUSTERI.
+Status: implemented. Role: signed in.
 
-Lists the businesses owned by the signed-in user in every approval state, so that an applicant can follow a pending
-application before holding the `ISLETME_YETKILISI` role. Paginated; items have the body of `POST /businesses`.
+Lists the businesses owned by the signed-in user in every approval state, newest first, so that an applicant can
+follow a pending application before holding the `ISLETME_YETKILISI` role. Paginated; items have the body of
+`POST /businesses`.
 
 ### PUT /businesses/{id}
 
-Status: planned. Role: owner of the business.
+Status: implemented. Role: owner of the business.
 
-Replaces `name`, `city`, `district`, `address` and `phone` (same body as `POST /businesses` without `type`). The type,
-approval status and active flag are not changed here. Response: `200 OK` with the business.
+Replaces `name`, `city`, `district`, `address` and `phone` with the rules of `POST /businesses`; `type` is ignored. The
+type, approval status and active flag are not changed here. Response: `200 OK` with the business.
+
+### GET /businesses/{id}/listings
+
+Status: implemented. Role: owner of the business.
+
+Lists every listing of the business, active and inactive, newest first. Optional `status` (`AKTIF` or `PASIF`).
+Paginated; items have the body of `GET /listings/{id}`.
 
 ### POST /businesses/{id}/listings
 
@@ -531,16 +556,17 @@ Status: implemented. Role: owner of the business.
 
 `title` (at most 100 characters), `description` (at most 2000) and `allergenInfo` (at most 500; when there are no
 allergens the business says so) are required. Amounts have up to 8 integer digits and up to 2 decimals. `salePrice`
-must be greater than zero and lower than `normalPrice`; `totalQuantity` is 1 to 10000; `pickupStart` must be before
-`pickupEnd` and `pickupEnd` in the future. Times are stored in whole seconds. The listing starts as `AKTIF` with
+must be greater than zero and lower than `normalPrice`; `totalQuantity` is 1 to 10000. The pickup window must start in
+the future, before it ends, and end on the same day (report section 1.3: every listing belongs to one day; a window
+that ends at midnight ends on the next day). Times are stored in whole seconds. The listing starts as `AKTIF` with
 `remainingQuantity` equal to `totalQuantity`. Response: `201 Created` with the body of `GET /listings/{id}`.
 
-Errors: `EOD-400` with field errors; `EOD-404` for an unknown business; `EOD-403` when the user does not own the
-business; `EOD-007` (409) when the business is not approved and active; `EOD-025` (400) for an invalid pickup window.
+Errors: `EOD-400` with field errors; `EOD-007` (409) when the business is not approved and active; `EOD-025` (400) for
+an invalid pickup window.
 
 ### PUT /businesses/{id}/listings/{listingId}/price
 
-Status: planned. Role: owner of the business.
+Status: implemented. Role: owner of the business.
 
 ```json
 {
@@ -548,23 +574,57 @@ Status: planned. Role: owner of the business.
 }
 ```
 
-Changes the sale price for future orders; existing order items keep their unit price. Response: `200 OK` with the
-listing.
+Changes the sale price for future orders. The listing row is locked, so a concurrent order is charged either the old or
+the new price; existing order items keep their unit price. Response: `200 OK` with the body of `GET /listings/{id}`.
+
+Errors: `EOD-400` for a malformed amount; `EOD-029` (400) when the price is not greater than zero and lower than the
+normal price.
 
 ### POST /businesses/{id}/listings/{listingId}/deactivate
 
-Status: planned. Role: owner of the business.
+Status: implemented. Role: owner of the business.
 
-Sets the listing to `PASIF`; confirmed orders are not affected. Repeating the request has no further effect. Response:
-`200 OK` with the listing.
+Sets the listing to `PASIF`: it leaves the listing search and takes no new orders. Confirmed orders are not affected.
+Repeating the request has no further effect. No body. Response: `200 OK` with the body of `GET /listings/{id}`.
 
 ### GET /businesses/{id}/orders
 
-Status: planned. Role: owner of the business.
+Status: implemented. Role: owner of the business.
 
-Lists the business's orders whose pickup window starts on `date` (query parameter, default today), ordered by pickup
-start. Optional `status`. Paginated; items have the fields of `GET /orders/{id}` plus `customerFirstName` and the
-customer's initial `customerLastNameInitial`. The pickup code is not included.
+Lists the business's orders whose pickup window starts on `date` (query parameter, ISO date, default today), ordered
+by pickup start. Optional `status`; `status=TESLIM_ALINMADI` lists the orders of the day that were not picked up.
+Paginated.
+
+The customer is shown as `customerName`: the first name and the upper-case initial of the last name ("Ahmet Y.", with
+Turkish casing, so "ilhan" becomes "İ."). The email address, the phone number and the pickup code are never included:
+the customer tells the code and the business verifies it with `POST /businesses/{id}/pickups/verify`.
+
+```json
+{
+  "items": [
+    {
+      "id": 120,
+      "status": "ONAYLANDI",
+      "createdAt": "2026-10-14T17:42:10",
+      "cancelledAt": null,
+      "customerName": "Ahmet Y.",
+      "items": [
+        { "listingId": 7, "title": "Akşam tatlı paketi", "quantity": 2, "unitPrice": "60.00", "lineTotal": "120.00" }
+      ],
+      "totalAmount": "120.00",
+      "refundedAmount": "0.00",
+      "pickup": {
+        "windowStart": "2026-10-14T19:00:00",
+        "windowEnd": "2026-10-14T21:00:00",
+        "pickedUpAt": null
+      }
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalItems": 1
+}
+```
 
 ### POST /businesses/{id}/pickups/verify
 
@@ -581,15 +641,16 @@ user as the verifier together, in one transaction. The order row is locked and b
 works only once. Both ends of the pickup window count as inside. Response: `200 OK` with the body of
 `GET /orders/{id}`.
 
-Errors: `EOD-400` when the code is not six digits; `EOD-404` for an unknown business; `EOD-008` (403) when the user
-does not own the business; `EOD-021` (404) when no confirmed order of this business has the code; `EOD-023` (409) when
-the code was already used; `EOD-022` (409) outside the pickup window.
+Errors: `EOD-400` when the code is not six digits; `EOD-008` (403) when the user does not own the business; `EOD-021`
+(404) when no confirmed order of this business has the code; `EOD-023` (409) when the code was already used; `EOD-022`
+(409) outside the pickup window.
 
 ### GET /businesses/{id}/reports
 
-Status: planned. Role: owner of the business.
+Status: implemented. Role: owner of the business.
 
-Sales summary of the business for the date range `from`–`to` (both required). Response: `200 OK`
+Sales summary of the business for the date range `from`–`to` (both required, ISO dates, both included, at most 366
+days). An order belongs to the range by its creation time. Response: `200 OK`
 
 ```json
 {
@@ -604,42 +665,59 @@ Sales summary of the business for the date range `from`–`to` (both required). 
   "grossRevenue": "1860.00",
   "refundedAmount": "120.00",
   "netRevenue": "1740.00",
-  "averageRating": "4.60"
+  "ratingCount": 15,
+  "averageRating": "4.60",
+  "ratingDistribution": { "1": 0, "2": 0, "3": 1, "4": 4, "5": 10 }
 }
 ```
 
-`averageRating` is `null` when there are no reviews.
+| Field | Meaning |
+| --- | --- |
+| `orderCount` and the three status counts | orders created in the range; confirmed orders are counted in `orderCount` only |
+| `unitsSold` | item quantities of every order that was not cancelled; orders that were not picked up stay paid and are counted |
+| `grossRevenue`, `refundedAmount`, `netRevenue` | successful charges, successful refunds and their difference |
+| `ratingCount`, `averageRating`, `ratingDistribution` | reviews of the orders in the range; `averageRating` has two decimals and is `null` without reviews |
+
+Errors: `EOD-400` when `from` or `to` is missing or malformed; `EOD-030` (400) when `from` is after `to` or the range
+is longer than 366 days.
 
 ## Administration
 
+Every endpoint below requires the `YONETICI` role; any other user gets `EOD-403`. Changes to accounts and roles take
+effect on the user's next request, because roles and the active flag are read from the database on every request.
+
 ### GET /admin/business-applications
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
 Lists business applications, oldest first. Optional `status` (default `BEKLEMEDE`). Paginated; items have the body of
 `POST /businesses` plus `ownerId`, `ownerFirstName` and `ownerLastName`.
 
 ### POST /admin/businesses/{id}/approve
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Sets the application to `ONAYLANDI` and grants the owner the `ISLETME_YETKILISI` role in the same transaction. No
-body. Response: `200 OK` with the business. Errors: application not `BEKLEMEDE` (409, *new code*).
+Sets the application to `ONAYLANDI` and grants the owner the `ISLETME_YETKILISI` role in the same transaction; the
+business row is locked, so an application is decided only once. The owner can use the owner endpoints on the next
+request without signing in again. No body. Response: `200 OK` with the business.
+
+Errors: `EOD-404` for an unknown business; `EOD-026` (409) when the application is not `BEKLEMEDE`.
 
 ### POST /admin/businesses/{id}/reject
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Sets the application to `REDDEDILDI`. No body. Response: `200 OK` with the business. Errors: application not
-`BEKLEMEDE` (409, *new code*).
+Sets the application to `REDDEDILDI`. No body. Response: `200 OK` with the business.
+
+Errors: `EOD-404` for an unknown business; `EOD-026` (409) when the application is not `BEKLEMEDE`.
 
 ### GET /admin/users
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
 Lists accounts ordered by id. Optional query parameters: `q` (part of the first name, last name or email address,
-ignoring letter case), `role` (`MUSTERI`, `ISLETME_YETKILISI` or `YONETICI`) and `active` (`true` or `false`).
-Paginated. Response: `200 OK`
+ignoring letter case; `%` and `_` match themselves), `role` (`MUSTERI`, `ISLETME_YETKILISI` or `YONETICI`) and
+`active` (`true` or `false`). Paginated. Response: `200 OK`
 
 ```json
 {
@@ -665,7 +743,7 @@ Errors: unknown `role` value (`EOD-400`).
 
 ### PUT /admin/users/{id}/active
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
 ```json
 {
@@ -673,19 +751,21 @@ Status: planned. Role: YONETICI.
 }
 ```
 
-Activates or deactivates an account. A deactivated user's open session is rejected on the next request. Response:
-`204 No Content`. Errors: an administrator deactivating their own account (409, *new code*).
+Activates or deactivates an account. A deactivated user's open session is rejected on the next request with
+`EOD-401`. Response: `204 No Content`.
+
+Errors: `EOD-404` for an unknown user; `EOD-027` (409) when administrators deactivate their own account.
 
 ### PUT /admin/businesses/{id}/active
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Same body as `PUT /admin/users/{id}/active`. An inactive business's listings no longer appear in `GET /listings`.
-Response: `200 OK` with the business.
+Same body as `PUT /admin/users/{id}/active`. An inactive business's listings no longer appear in `GET /listings` and
+take no orders; they come back when the business is activated again. Response: `200 OK` with the business.
 
 ### PUT /admin/users/{id}/roles/{roleName}
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
 Grants a role (`MUSTERI`, `ISLETME_YETKILISI` or `YONETICI`); the user holds it from the next request on. Granting a
 role the user already holds has no effect. No body. Response: `204 No Content`. `ISLETME_YETKILISI` is normally granted
@@ -695,30 +775,45 @@ Errors: unknown user or role name (`EOD-404`).
 
 ### DELETE /admin/users/{id}/roles/{roleName}
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Revokes a role (`MUSTERI`, `ISLETME_YETKILISI` or `YONETICI`); the user loses it on the next request. Revoking a role the
-user does not hold has no effect. Response: `204 No Content`. Errors: unknown role name (`EOD-404`); an administrator
-revoking their own `YONETICI` role (409, *new code*).
+Revokes a role by deleting the `KULLANICI_ROL` row, the only delete the application account is allowed to run; the
+user loses the role on the next request. Revoking a role the user does not hold has no effect. Response:
+`204 No Content`.
+
+Errors: unknown user or role name (`EOD-404`); `EOD-028` (409) when administrators revoke their own `YONETICI` role.
 
 ### GET /admin/listings
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
 Lists every listing of every business, including inactive and expired ones, newest first, for inspection. Optional
-query parameters: `businessId`, `status` (`AKTIF` or `PASIF`) and the date range `from`–`to` on the pickup start.
-Paginated; items have the fields of a `GET /listings` item plus `status` and `createdAt`.
+query parameters: `businessId`, `status` (`AKTIF` or `PASIF`) and the ISO date range `from`–`to` on the pickup start
+(both included). Paginated; items have the body of `GET /listings/{id}`.
+
+Errors: `EOD-400` when `from` is after `to`.
 
 ### POST /admin/listings/{id}/deactivate
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Sets any listing to `PASIF`, for example when it breaks the platform rules. Response: `200 OK` with the listing.
+Sets any listing to `PASIF`, for example when it breaks the platform rules. Repeating it has no further effect. No
+body. Response: `200 OK` with the body of `GET /listings/{id}`.
+
+Errors: `EOD-404` for an unknown listing.
 
 ### GET /admin/reports/platform
 
-Status: planned. Role: YONETICI.
+Status: implemented. Role: YONETICI.
 
-Platform-wide summary for the date range `from`–`to` (both required), read from the reporting views. Response:
-`200 OK` with the fields of `GET /businesses/{id}/reports` without `businessId`, plus `activeBusinessCount` and
-`newUserCount`.
+Platform-wide summary for the date range `from`–`to`, with the rules of `GET /businesses/{id}/reports`. It is read
+through the separate read-only database account `eod_report` from the reporting views only (`v_order_summary`,
+`v_payment_summary`, `v_review_summary`, `v_business_status`, `v_user_registrations`); that account cannot read any
+base table. Response: `200 OK` with the fields of `GET /businesses/{id}/reports` without `businessId`, plus:
+
+| Field | Meaning |
+| --- | --- |
+| `activeBusinessCount` | approved and active businesses at the time of the request |
+| `newUserCount` | accounts registered in the range |
+
+Errors: as for `GET /businesses/{id}/reports`.
