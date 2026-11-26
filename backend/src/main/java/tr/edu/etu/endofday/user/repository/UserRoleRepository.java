@@ -52,4 +52,23 @@ public class UserRoleRepository {
                 .update();
         return inserted == 1;
     }
+
+    /**
+     * Revokes the role. This is the only DELETE the application account eod_app may run (V5); all other records are
+     * deactivated, never deleted.
+     *
+     * @return {@code true} when the user held the role
+     */
+    public boolean removeRole(long userId, Role role) {
+        int deleted = jdbcClient
+                .sql("""
+                        DELETE FROM KULLANICI_ROL
+                        WHERE kullanici_id = :userId
+                          AND rol_id = (SELECT rol_id FROM ROL WHERE rol_adi = :roleName)
+                        """)
+                .param("userId", userId)
+                .param("roleName", role.name())
+                .update();
+        return deleted == 1;
+    }
 }
