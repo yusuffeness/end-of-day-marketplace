@@ -39,6 +39,10 @@ The database raises these codes from triggers with `SIGNAL SQLSTATE '45000'`; th
 | `EOD-007` | A listing is published (AKTIF) only for an approved and active business; updates are checked only when the status changes to AKTIF. | `trg_paket_ilani_before_insert`, `trg_paket_ilani_before_update` | 5.1 |
 | `EOD-008` | Only the owner of the order's business verifies the pickup. | `trg_teslim_alma_before_insert`, `trg_teslim_alma_before_update` | 5.1 |
 
+A trigger error reaches the client as a problem detail with the trigger's code and Turkish message (`DatabaseRuleViolation`): `EOD-008` with 403 Forbidden, every other code with 409 Conflict.
+
+The services check EOD-001 and EOD-005 to EOD-008 before writing, so that the client gets a precise answer; they use the same code with a detail that names the action, for example "Yalnızca onaylanmış bir sipariş iptal edilebilir." for EOD-005 on POST /orders/{id}/cancel. The triggers stay the final guarantee.
+
 ## Application codes
 
 The services raise these codes; the database does not.
@@ -49,3 +53,16 @@ The services raise these codes; the database does not.
 | `EOD-010` | Sign-in requires a known email address and the matching password; both failures give the same answer. Detail: "E-posta veya parola hatalı." | `LoginService` (POST /auth/login) | 401 Unauthorized |
 | `EOD-011` | An inactive account cannot sign in; reported only after the password matched. Detail: "Hesabınız pasif durumda." | `LoginService` (POST /auth/login) | 403 Forbidden |
 | `EOD-012` | Changing the password requires the current password. Detail: "Mevcut parola hatalı." | `UserService` (PUT /me/password) | 400 Bad Request |
+| `EOD-013` | An order is accepted only for an approved and active business and active listings. Detail: "İlan şu anda satışta değil." | `OrderService` (POST /orders) | 409 Conflict |
+| `EOD-014` | A listing must have at least the ordered number of units left, checked on the locked row. Detail: "İlanda yeterli adet kalmadı." | `OrderService` (POST /orders) | 409 Conflict |
+| `EOD-015` | The pickup windows of the listings of an order must have a common time (report 4.4). Detail: "Seçilen ilanların ortak bir teslim alma aralığı yok." | `OrderService` (POST /orders) | 409 Conflict |
+| `EOD-016` | An order is placed before the common pickup window starts (report 5.1). Detail: "Teslim alma aralığı başladığı için sipariş verilemez." | `OrderService` (POST /orders) | 409 Conflict |
+| `EOD-017` | The simulated payment provider declined the charge; nothing is stored. Detail: "Ödeme reddedildi, sipariş oluşturulmadı." | `OrderService` (POST /orders) | 402 Payment Required |
+| `EOD-018` | A request id is processed once and belongs to one request: an order charge of one customer, or a refund of one order. Detail: "Bu istek numarası başka bir işlem için kullanılmış." | `OrderService` (POST /orders, POST /orders/{id}/cancel) | 409 Conflict |
+| `EOD-019` | The customer cancels only before the pickup window starts (report 5.1). Detail: "Teslim alma aralığı başladığı için sipariş iptal edilemez." | `OrderService` (POST /orders/{id}/cancel) | 409 Conflict |
+| `EOD-020` | The simulated payment provider declined the refund; the refund is kept as BASARISIZ and the order stays confirmed. Detail: "İade reddedildi, sipariş iptal edilmedi." | `OrderService` (POST /orders/{id}/cancel) | 402 Payment Required |
+| `EOD-021` | A pickup code is verified only for a confirmed order of the business in the path. Detail: "Bu işletmede bu koda ait onaylanmış bir sipariş yok." | `PickupService` (POST /businesses/{id}/pickups/verify) | 404 Not Found |
+| `EOD-022` | A pickup is verified only inside the pickup window, both ends included (report 5.1). Detail: "Teslim yalnızca teslim alma aralığında yapılabilir." | `PickupService` (POST /businesses/{id}/pickups/verify) | 409 Conflict |
+| `EOD-023` | A pickup code is used only once (report 5.1). Detail: "Bu teslim kodu daha önce kullanıldı." | `PickupService` (POST /businesses/{id}/pickups/verify) | 409 Conflict |
+| `EOD-024` | An order is reviewed at most once (report 4.5). Detail: "Bu sipariş zaten değerlendirildi." | `ReviewService` (POST /orders/{id}/review) | 409 Conflict |
+| `EOD-025` | The pickup window of a new listing starts before it ends and ends in the future. Detail: "Teslim alma aralığının başlangıcı bitişinden önce olmalı ve bitişi gelecekte olmalıdır." | `ListingService` (POST /businesses/{id}/listings) | 400 Bad Request |

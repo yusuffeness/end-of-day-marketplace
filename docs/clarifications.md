@@ -25,5 +25,13 @@ This file records details the project report left open and how they were resolve
 | 7.3 | Session contents | the session stores only the user id; the active flag and roles are read from the database on every request, so deactivation and role revocation apply immediately. |
 | 7.3 | Sign-in of an inactive account | the active flag is checked after the password, so only someone who knows the password learns that the account is inactive. |
 | 3.3, 6 | Registration | creates an active account with the role MUSTERI and does not sign the user in. |
+| 3.5, 6 | Purchasable listings | the listing search shows AKTIF listings with stock left, of approved and active businesses, whose pickup window has not started; an order is accepted only before the window starts, so a listing in its window is no longer offered. |
+| 4.4, 5.1 | Window boundaries | an order and a cancellation are accepted strictly before the window start; a pickup is verified from the window start to the window end, both included, matching the not-picked-up event (teslim_bitis < NOW()). |
+| 1.3, 4.3 | Simulated payment | the request flags simulatePaymentFailure (POST /orders) and simulateRefundFailure (POST /orders/{id}/cancel) make the provider decline; a declined charge rolls the order back without a trace, a declined refund is stored as BASARISIZ and the order stays confirmed. |
+| 4.3, 7.2 | Repeated requests | the request id is ODEME_ISLEMI.istek_no of the charge or the refund; a repeated request returns the result of the first one, a request id is never reused for another customer, order or kind of transaction. |
+| 7.2 | Transaction isolation | order, cancellation and pickup transactions run under READ COMMITTED: they lock the rows they change first (business shared, listings exclusive in id order, order row exclusive), and later reads see the latest committed data without gap locks. |
+| 4.4 | Pickup codes | six random digits from SecureRandom; a code that is taken is replaced by a new one. Codes are unique across all orders and are never logged. |
+| 6 | Business owner as customer | an owner may order from their own business; the report does not forbid it. |
+| 6, 7.3 | Visibility of orders and listings | another customer's order answers EOD-404, so its existence is not revealed; an inactive listing is shown only to the owner of its business and to administrators. |
 
 Later entries are added when a detail is decided.

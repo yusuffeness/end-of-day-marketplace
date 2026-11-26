@@ -1,69 +1,112 @@
-### Runnable examples of the implemented endpoints (see api.md).
+### Runnable examples of every endpoint in api.md, using the demo data of the dev profile.
 #
-# Works with the IntelliJ HTTP Client and the VS Code REST Client extension, which keep cookies between requests.
-# Start the backend with the dev profile and run the requests from top to bottom. The demo accounts are listed in the
-# README; they all use the password GunSonu2026!.
+# Tools: the IntelliJ HTTP Client, or the httpyac extension in VS Code. Both keep cookies between requests and run the
+# "> {% ... %}" response handlers that store the CSRF token and the ids used by later requests. The VS Code REST Client
+# extension does not run these handlers, so its state-changing requests fail with 403 EOD-403.
+#
+# Start the backend with the dev profile on a freshly reset database (see "Demo data" in the README) and run the
+# requests from top to bottom. The live demo listings and the open demo order are valid for a few hours after the
+# database was loaded. The client machine is assumed to use the Istanbul time zone, like the server.
 #
 # State-changing requests need the CSRF token: the XSRF-TOKEN cookie set by the server is sent back in the
-# X-XSRF-TOKEN header. Login and logout replace the token, so run "Fetch the CSRF token" again after each of them.
+# X-XSRF-TOKEN header. The handlers below store the current token in the variable xsrf. Sign-in replaces the token
+# and sign-out clears it, so "Fetch the CSRF token" is run again after every sign-out.
+#
+# Endpoints marked "planned" in api.md answer 404 EOD-404 until they are implemented.
 
 @baseUrl = http://localhost:8080/api/v1
-@email = ali.yeni@ornek.test
-@password = parola123
+@demoPassword = GunSonu2026!
+@customerEmail = ahmet.yilmaz@ornek.test
+@ownerEmail = can.dogan@ornek.test
+@bakeryOwnerEmail = mehmet.karaca@ornek.test
+@adminEmail = selin.aydemir@ornek.test
+
+########################################################################################################################
+# Authentication and account (implemented)
+########################################################################################################################
 
 ### Fetch the CSRF token
-# @name csrf
 GET {{baseUrl}}/auth/csrf
 
 > {%
-    const cookie = response.headers.valuesOf("Set-Cookie").find(c => c.startsWith("XSRF-TOKEN="));
-    if (cookie) {
-        client.global.set("xsrf", cookie.substring("XSRF-TOKEN=".length).split(";")[0]);
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
     }
 %}
 
-### Register a customer account
+### Register a new customer account (the timestamp keeps the address unique on every run)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
 
 {
-  "firstName": "Ali",
+  "firstName": "Deniz",
   "lastName": "Yeni",
-  "email": "{{email}}",
+  "email": "deniz.{{$timestamp}}@ornek.test",
   "phone": "0532 000 00 00",
-  "password": "{{password}}"
+  "password": "parola123"
 }
 
-### Sign in
+### Register again with a demo address: 409 EOD-009
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "firstName": "Ahmet",
+  "lastName": "Yılmaz",
+  "email": "AHMET.YILMAZ@ornek.test",
+  "password": "parola123"
+}
+
+### Sign in with a wrong password: 401 EOD-010
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
 
 {
-  "email": "{{email}}",
-  "password": "{{password}}"
+  "email": "{{customerEmail}}",
+  "password": "yanlisParola1"
+}
+
+### Sign in as the demo customer Ahmet Yılmaz
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{demoPassword}}"
 }
 
 > {%
-    const cookie = response.headers.valuesOf("Set-Cookie").filter(c => c.startsWith("XSRF-TOKEN=")).pop();
-    if (cookie) {
-        client.global.set("xsrf", cookie.substring("XSRF-TOKEN=".length).split(";")[0]);
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
     }
 %}
 
 ### Show the signed-in account
 GET {{baseUrl}}/me
 
-### Update the name and phone number
+### Update the name and phone number (the demo values are written back unchanged)
 PUT {{baseUrl}}/me
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
 
 {
-  "firstName": "Ali",
-  "lastName": "Yıldız",
-  "phone": null
+  "firstName": "Ahmet",
+  "lastName": "Yılmaz",
+  "phone": "0533 520 00 01"
 }
 
 ### Change the password
@@ -72,9 +115,177 @@ Content-Type: application/json
 X-XSRF-TOKEN: {{xsrf}}
 
 {
-  "currentPassword": "{{password}}",
+  "currentPassword": "{{demoPassword}}",
   "newPassword": "yeniParola456"
 }
+
+### Change the password back to the demo password
+PUT {{baseUrl}}/me/password
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "currentPassword": "yeniParola456",
+  "newPassword": "{{demoPassword}}"
+}
+
+### Change the password with a wrong current password: 400 EOD-012
+PUT {{baseUrl}}/me/password
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "currentPassword": "yanlisParola1",
+  "newPassword": "yeniParola456"
+}
+
+### A state-changing request without the CSRF header: 403 EOD-403
+PUT {{baseUrl}}/me
+Content-Type: application/json
+
+{
+  "firstName": "Ahmet",
+  "lastName": "Yılmaz",
+  "phone": "0533 520 00 01"
+}
+
+########################################################################################################################
+# Customer: listings and orders (implemented), still signed in as Ahmet Yılmaz
+########################################################################################################################
+
+### Purchasable bakery listings in Ankara up to 100 TL (stores the first one for the next requests)
+GET {{baseUrl}}/listings?city=Ankara&type=FIRIN&minPrice=10.00&maxPrice=100.00&page=0&size=20
+
+> {%
+    if (response.status === 200 && response.body.items.length > 0) {
+        client.global.set("listingId", response.body.items[0].id);
+        client.global.set("businessId", response.body.items[0].businessId);
+    }
+%}
+
+### Invalid price range: 400 EOD-400
+GET {{baseUrl}}/listings?minPrice=100.00&maxPrice=10.00
+
+### Show the listing: description, allergens, prices, stock, address and pickup window
+GET {{baseUrl}}/listings/{{listingId}}
+
+### Place an order with the simulated payment
+POST {{baseUrl}}/orders
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "businessId": {{businessId}},
+  "items": [
+    { "listingId": {{listingId}}, "quantity": 1 }
+  ],
+  "requestId": "demo-siparis-{{$timestamp}}",
+  "simulatePaymentFailure": false
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("orderId", response.body.id);
+    }
+%}
+
+### Place an order whose payment is declined: 402 EOD-017, nothing is stored
+POST {{baseUrl}}/orders
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "businessId": {{businessId}},
+  "items": [
+    { "listingId": {{listingId}}, "quantity": 1 }
+  ],
+  "requestId": "demo-red-{{$timestamp}}",
+  "simulatePaymentFailure": true
+}
+
+### Order more units than are left: 409 EOD-014
+POST {{baseUrl}}/orders
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "businessId": {{businessId}},
+  "items": [
+    { "listingId": {{listingId}}, "quantity": 100 }
+  ],
+  "requestId": "demo-stok-{{$timestamp}}"
+}
+
+### List my orders, newest first
+GET {{baseUrl}}/orders?page=0&size=20
+
+### Show the new order with its pickup code, canCancel and canReview
+GET {{baseUrl}}/orders/{{orderId}}
+
+### Cancel with a declined refund: 402 EOD-020, the refund is kept as BASARISIZ and the order stays confirmed
+POST {{baseUrl}}/orders/{{orderId}}/cancel
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "requestId": "demo-iade-red-{{$timestamp}}",
+  "simulateRefundFailure": true
+}
+
+### Cancel the new order before its pickup window starts (full refund, stock returned once)
+POST {{baseUrl}}/orders/{{orderId}}/cancel
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "requestId": "demo-iptal-{{$timestamp}}",
+  "simulateRefundFailure": false
+}
+
+### Cancel the cancelled order again with a new request id: 409 EOD-005
+POST {{baseUrl}}/orders/{{orderId}}/cancel
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "requestId": "demo-iptal-tekrar-{{$timestamp}}"
+}
+
+### My delivered orders (the demo orders already have reviews, so reviewing them answers 409 EOD-024)
+GET {{baseUrl}}/orders?status=TESLIM_EDILDI
+
+> {%
+    if (response.status === 200 && response.body.items.length > 0) {
+        client.global.set("deliveredOrderId", response.body.items[0].id);
+    }
+%}
+
+### Review a delivered demo order that already has a review: 409 EOD-024
+POST {{baseUrl}}/orders/{{deliveredOrderId}}/review
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "rating": 5,
+  "comment": "Çok taze ve lezzetliydi."
+}
+
+### Apply for a business (planned)
+POST {{baseUrl}}/businesses
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "name": "Yılmaz Pastanesi",
+  "type": "FIRIN",
+  "city": "Ankara",
+  "district": "Çankaya",
+  "address": "Tunalı Hilmi Cad. No: 5",
+  "phone": "0312 555 60 01"
+}
+
+### Follow my business applications (planned)
+GET {{baseUrl}}/businesses/mine
 
 ### Sign out
 POST {{baseUrl}}/auth/logout
@@ -82,3 +293,512 @@ X-XSRF-TOKEN: {{xsrf}}
 
 ### After signing out, the account endpoints answer 401 EOD-401
 GET {{baseUrl}}/me
+
+########################################################################################################################
+# Report example 6.1 through the API (implemented)
+#
+# Mehmet Karaca publishes 5 packages of 120 TL for 60 TL at Karaca Fırını Kızılay Şubesi with a pickup window that
+# opens 2 minutes later; Ahmet Yılmaz buys 2, so 3 remain; after the window opens Mehmet Karaca verifies the code and
+# Ahmet Yılmaz rates the order.
+########################################################################################################################
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the bakery owner Mehmet Karaca (also sets the pickup window: now + 2 minutes to now + 62 minutes)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{bakeryOwnerEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+    const pad = n => String(n).padStart(2, "0");
+    const local = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T"
+        + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":00";
+    const start = new Date(Date.now() + 2 * 60 * 1000);
+    client.global.set("examplePickupStart", local(start));
+    client.global.set("examplePickupEnd", local(new Date(start.getTime() + 60 * 60 * 1000)));
+%}
+
+### Find Karaca Fırını Kızılay Şubesi through its live listing
+GET {{baseUrl}}/listings?city=Ankara&district=Çankaya&type=FIRIN
+
+> {%
+    const item = response.body.items.find(i => i.businessName === "Karaca Fırını Kızılay Şubesi");
+    if (item) {
+        client.global.set("exampleBusinessId", item.businessId);
+    }
+%}
+
+### Publish 5 packages: normal price 120.00, sale price 60.00
+POST {{baseUrl}}/businesses/{{exampleBusinessId}}/listings
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "title": "Karışık Unlu Mamul Paketi",
+  "description": "Ekmek, poğaça ve açma karışık paket.",
+  "allergenInfo": "Gluten, süt, yumurta içerir.",
+  "normalPrice": "120.00",
+  "salePrice": "60.00",
+  "totalQuantity": 5,
+  "pickupStart": "{{examplePickupStart}}",
+  "pickupEnd": "{{examplePickupEnd}}"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("exampleListingId", response.body.id);
+    }
+%}
+
+### Sign out the owner
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the customer Ahmet Yılmaz
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Buy 2 packages: 120.00 TL is charged and a pickup code is issued
+POST {{baseUrl}}/orders
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "businessId": {{exampleBusinessId}},
+  "items": [
+    { "listingId": {{exampleListingId}}, "quantity": 2 }
+  ],
+  "requestId": "demo-ornek-{{$timestamp}}"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("exampleOrderId", response.body.id);
+        client.global.set("examplePickupCode", response.body.pickup.code);
+    }
+%}
+
+### 3 packages remain
+GET {{baseUrl}}/listings/{{exampleListingId}}
+
+### Sign out the customer
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the bakery owner again
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{bakeryOwnerEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Verify the pickup code once the window is open (before examplePickupStart it answers 409 EOD-022)
+POST {{baseUrl}}/businesses/{{exampleBusinessId}}/pickups/verify
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "code": "{{examplePickupCode}}"
+}
+
+### Verify the same code again: 409 EOD-023
+POST {{baseUrl}}/businesses/{{exampleBusinessId}}/pickups/verify
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "code": "{{examplePickupCode}}"
+}
+
+### Sign out the owner
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the customer again
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Rate the delivered order
+POST {{baseUrl}}/orders/{{exampleOrderId}}/review
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "rating": 5,
+  "comment": "Çok taze ve lezzetliydi."
+}
+
+### The order is TESLIM_EDILDI with its review; canReview is now false
+GET {{baseUrl}}/orders/{{exampleOrderId}}
+
+### Sign out
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+########################################################################################################################
+# Business owner: Can Doğan, owner of Moda Kahve Evi
+########################################################################################################################
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the business owner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{ownerEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Find Moda Kahve Evi through its live listing
+GET {{baseUrl}}/listings?city=İstanbul&district=Kadıköy&type=KAFE
+
+> {%
+    const item = response.body.items.find(i => i.businessName === "Moda Kahve Evi");
+    if (item) {
+        client.global.set("ownBusinessId", item.businessId);
+    }
+%}
+
+### List my businesses (planned)
+GET {{baseUrl}}/businesses/mine
+
+### Update the business (planned; the demo values are written back unchanged)
+PUT {{baseUrl}}/businesses/{{ownBusinessId}}
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "name": "Moda Kahve Evi",
+  "city": "İstanbul",
+  "district": "Kadıköy",
+  "address": "Moda Cad. No: 85",
+  "phone": "0216 555 30 01"
+}
+
+### Publish a listing (implemented; the pickup window must end in the future)
+POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "title": "Akşam tatlı paketi",
+  "description": "Günün tatlılarından karışık 4 parça.",
+  "allergenInfo": "Gluten, süt, yumurta içerir.",
+  "normalPrice": "150.00",
+  "salePrice": "60.00",
+  "totalQuantity": 5,
+  "pickupStart": "2027-06-15T19:00:00",
+  "pickupEnd": "2027-06-15T21:00:00"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("ownListingId", response.body.id);
+    }
+%}
+
+### Publish a listing whose sale price is not discounted: 400 EOD-400
+POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "title": "Akşam tatlı paketi",
+  "description": "Günün tatlılarından karışık 4 parça.",
+  "allergenInfo": "Gluten, süt, yumurta içerir.",
+  "normalPrice": "60.00",
+  "salePrice": "60.00",
+  "totalQuantity": 5,
+  "pickupStart": "2027-06-15T19:00:00",
+  "pickupEnd": "2027-06-15T21:00:00"
+}
+
+### Change the sale price of the listing (planned)
+PUT {{baseUrl}}/businesses/{{ownBusinessId}}/listings/{{ownListingId}}/price
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "salePrice": "55.00"
+}
+
+### Deactivate the listing (planned)
+POST {{baseUrl}}/businesses/{{ownBusinessId}}/listings/{{ownListingId}}/deactivate
+X-XSRF-TOKEN: {{xsrf}}
+
+### Today's orders of the business (planned)
+GET {{baseUrl}}/businesses/{{ownBusinessId}}/orders
+
+### Today's orders that were not picked up (planned)
+GET {{baseUrl}}/businesses/{{ownBusinessId}}/orders?status=TESLIM_ALINMADI
+
+### Verify the pickup code of the open demo order (implemented; inside its window, 3 to 4 hours after loading)
+POST {{baseUrl}}/businesses/{{ownBusinessId}}/pickups/verify
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "code": "476865"
+}
+
+### Sales report of October 2026 (planned)
+GET {{baseUrl}}/businesses/{{ownBusinessId}}/reports?from=2026-10-01&to=2026-10-31
+
+### Sign out
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+########################################################################################################################
+# Administrator (planned): Selin Aydemir
+########################################################################################################################
+
+### Fetch the CSRF token
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Sign in as the administrator
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    const token = (response.headers.valuesOf("Set-Cookie") || [])
+        .filter(c => c.startsWith("XSRF-TOKEN="))
+        .map(c => c.split(";")[0].substring("XSRF-TOKEN=".length))
+        .filter(v => v.length > 0)
+        .pop();
+    if (token) {
+        client.global.set("xsrf", token);
+    }
+%}
+
+### Pending business applications (stores the oldest one: Koç Simit Fırını in the demo data)
+GET {{baseUrl}}/admin/business-applications
+
+> {%
+    if (response.status === 200 && response.body.items.length > 0) {
+        client.global.set("applicationId", response.body.items[0].id);
+        client.global.set("applicantId", response.body.items[0].ownerId);
+    }
+%}
+
+### Approve the application (grants ISLETME_YETKILISI to its owner)
+POST {{baseUrl}}/admin/businesses/{{applicationId}}/approve
+X-XSRF-TOKEN: {{xsrf}}
+
+### Reject the same application: 409, it is no longer BEKLEMEDE
+POST {{baseUrl}}/admin/businesses/{{applicationId}}/reject
+X-XSRF-TOKEN: {{xsrf}}
+
+### Search the accounts
+GET {{baseUrl}}/admin/users?q=ayten&active=true
+
+### Deactivate the applicant's account
+PUT {{baseUrl}}/admin/users/{{applicantId}}/active
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "active": false
+}
+
+### Activate the account again
+PUT {{baseUrl}}/admin/users/{{applicantId}}/active
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "active": true
+}
+
+### Deactivate the approved business
+PUT {{baseUrl}}/admin/businesses/{{applicationId}}/active
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "active": false
+}
+
+### Revoke the business owner role
+DELETE {{baseUrl}}/admin/users/{{applicantId}}/roles/ISLETME_YETKILISI
+X-XSRF-TOKEN: {{xsrf}}
+
+### Grant the business owner role again
+PUT {{baseUrl}}/admin/users/{{applicantId}}/roles/ISLETME_YETKILISI
+X-XSRF-TOKEN: {{xsrf}}
+
+### Inspect the active listings (stores the first one)
+GET {{baseUrl}}/admin/listings?status=AKTIF
+
+> {%
+    if (response.status === 200 && response.body.items.length > 0) {
+        client.global.set("inspectedListingId", response.body.items[0].id);
+    }
+%}
+
+### Deactivate a listing that breaks the platform rules
+POST {{baseUrl}}/admin/listings/{{inspectedListingId}}/deactivate
+X-XSRF-TOKEN: {{xsrf}}
+
+### Platform report of October 2026
+GET {{baseUrl}}/admin/reports/platform?from=2026-10-01&to=2026-10-31
+
+### Sign out
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
