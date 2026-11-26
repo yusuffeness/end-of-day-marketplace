@@ -18,6 +18,14 @@ spring:
     problemdetails:
       enabled: true
 
+# The read-only reporting account, used only for the platform report.
+eod:
+  report:
+    datasource:
+      url: ${spring.datasource.url}
+      username: eod_report
+      password: ${EOD_REPORT_PASSWORD}
+
 server:
   servlet:
     session:

@@ -20,5 +20,8 @@ public abstract class IntegrationTest {
         registry.add("spring.flyway.url", MySqlTestContainer::jdbcUrl);
         registry.add("spring.flyway.user", () -> MySqlTestContainer.OWNER_USER);
         registry.add("spring.flyway.password", () -> MySqlTestContainer.OWNER_PASSWORD);
+        registry.add("eod.report.datasource.url", MySqlTestContainer::jdbcUrl);
+        registry.add("eod.report.datasource.username", () -> MySqlTestContainer.REPORT_USER);
+        registry.add("eod.report.datasource.password", () -> MySqlTestContainer.REPORT_PASSWORD);
     }
 }
