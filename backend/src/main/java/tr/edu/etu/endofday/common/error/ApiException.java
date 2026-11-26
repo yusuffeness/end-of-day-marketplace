@@ -28,6 +28,20 @@ public class ApiException extends RuntimeException {
                 HttpStatus.NOT_FOUND, GlobalExceptionHandler.NOT_FOUND_CODE, GlobalExceptionHandler.NOT_FOUND_DETAIL);
     }
 
+    /** The generic {@code EOD-403} error for an action the signed-in user may not perform. */
+    public static ApiException forbidden() {
+        return new ApiException(
+                HttpStatus.FORBIDDEN, GlobalExceptionHandler.FORBIDDEN_CODE, GlobalExceptionHandler.FORBIDDEN_DETAIL);
+    }
+
+    /** The generic {@code EOD-400} error for an invalid parameter, without field errors. */
+    public static ApiException badRequest() {
+        return new ApiException(
+                HttpStatus.BAD_REQUEST,
+                GlobalExceptionHandler.BAD_REQUEST_CODE,
+                GlobalExceptionHandler.BAD_REQUEST_DETAIL);
+    }
+
     public HttpStatus getStatus() {
         return status;
     }

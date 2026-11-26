@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -31,6 +32,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     static final String BAD_REQUEST_CODE = "EOD-400";
     static final String BAD_REQUEST_DETAIL = "Gönderilen bilgiler geçersiz.";
+    static final String FORBIDDEN_CODE = "EOD-403";
+    static final String FORBIDDEN_DETAIL = "Bu işlem için yetkiniz yok.";
     static final String NOT_FOUND_CODE = "EOD-404";
     static final String NOT_FOUND_DETAIL = "İstenen kaynak bulunamadı.";
     static final String INTERNAL_ERROR_CODE = "EOD-500";
@@ -52,6 +55,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({AuthenticationException.class, AccessDeniedException.class})
     public void rethrowSecurityException(RuntimeException ex) {
         throw ex;
+    }
+
+    /** A business rule raised by a trigger keeps its code and Turkish message; anything else is unexpected. */
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ProblemDetail> handleDataAccess(DataAccessException ex) {
+        return DatabaseRuleViolation.from(ex).map(this::handleApiException).orElseGet(() -> handleUnexpected(ex));
     }
 
     @ExceptionHandler(Exception.class)
