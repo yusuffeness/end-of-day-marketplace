@@ -1,0 +1,84 @@
+### Runnable examples of the implemented endpoints (see api.md).
+#
+# Works with the IntelliJ HTTP Client and the VS Code REST Client extension, which keep cookies between requests.
+# Start the backend with the dev profile and run the requests from top to bottom. The demo accounts are listed in the
+# README; they all use the password GunSonu2026!.
+#
+# State-changing requests need the CSRF token: the XSRF-TOKEN cookie set by the server is sent back in the
+# X-XSRF-TOKEN header. Login and logout replace the token, so run "Fetch the CSRF token" again after each of them.
+
+@baseUrl = http://localhost:8080/api/v1
+@email = ali.yeni@ornek.test
+@password = parola123
+
+### Fetch the CSRF token
+# @name csrf
+GET {{baseUrl}}/auth/csrf
+
+> {%
+    const cookie = response.headers.valuesOf("Set-Cookie").find(c => c.startsWith("XSRF-TOKEN="));
+    if (cookie) {
+        client.global.set("xsrf", cookie.substring("XSRF-TOKEN=".length).split(";")[0]);
+    }
+%}
+
+### Register a customer account
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "firstName": "Ali",
+  "lastName": "Yeni",
+  "email": "{{email}}",
+  "phone": "0532 000 00 00",
+  "password": "{{password}}"
+}
+
+### Sign in
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    const cookie = response.headers.valuesOf("Set-Cookie").filter(c => c.startsWith("XSRF-TOKEN=")).pop();
+    if (cookie) {
+        client.global.set("xsrf", cookie.substring("XSRF-TOKEN=".length).split(";")[0]);
+    }
+%}
+
+### Show the signed-in account
+GET {{baseUrl}}/me
+
+### Update the name and phone number
+PUT {{baseUrl}}/me
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "firstName": "Ali",
+  "lastName": "Yıldız",
+  "phone": null
+}
+
+### Change the password
+PUT {{baseUrl}}/me/password
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrf}}
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "yeniParola456"
+}
+
+### Sign out
+POST {{baseUrl}}/auth/logout
+X-XSRF-TOKEN: {{xsrf}}
+
+### After signing out, the account endpoints answer 401 EOD-401
+GET {{baseUrl}}/me
