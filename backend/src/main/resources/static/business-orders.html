@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>İşletme Siparişleri · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/business-orders.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>İşletme Siparişleri</h1>
+      <div id="business-picker"></div>
+      <div id="business-content">
+        <p class="loading" role="status">Yükleniyor...</p>
+      </div>
+
+      <template id="orders-template">
+        <section class="panel">
+          <h2>Teslim doğrulama</h2>
+          <p class="muted">Müşterinin söylediği 6 haneli teslim kodunu girin. Teslim yalnızca teslim alma aralığında yapılabilir.</p>
+          <form id="verify-form" class="verify-form" novalidate>
+            <div class="field">
+              <label for="pickup-code">Teslim kodu</label>
+              <input id="pickup-code" name="code" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" required>
+            </div>
+            <button type="submit" class="button">Teslim Et</button>
+          </form>
+          <div id="verify-message" class="message" hidden></div>
+        </section>
+
+        <section class="panel">
+          <h2>Siparişler</h2>
+          <form id="orders-filter" class="inline-form">
+            <div class="field">
+              <label for="orders-date">Teslim günü</label>
+              <input id="orders-date" name="date" type="date">
+            </div>
+            <div class="field">
+              <label for="orders-status">Durum</label>
+              <select id="orders-status" name="status">
+                <option value="">Tümü</option>
+                <option value="ONAYLANDI">Onaylandı, teslim bekliyor</option>
+                <option value="TESLIM_EDILDI">Teslim edildi</option>
+                <option value="IPTAL_EDILDI">İptal edildi</option>
+                <option value="TESLIM_ALINMADI">Teslim alınmadı</option>
+              </select>
+            </div>
+          </form>
+          <div id="orders-message" class="message" hidden></div>
+          <div id="orders"></div>
+          <nav id="orders-pager" class="pager" aria-label="Sipariş sayfaları" hidden></nav>
+        </section>
+
+        <section class="panel">
+          <h2>Bugün teslim alınmayan siparişler</h2>
+          <div id="missed-message" class="message" hidden></div>
+          <div id="missed"></div>
+          <nav id="missed-pager" class="pager" aria-label="Teslim alınmayan sipariş sayfaları" hidden></nav>
+        </section>
+      </template>
+    </main>
+  </body>
+</html>

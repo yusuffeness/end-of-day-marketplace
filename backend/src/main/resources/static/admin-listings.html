@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>İlan Denetimi · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/admin-listings.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>İlan Denetimi</h1>
+      <form id="filter" class="filters">
+        <div class="field">
+          <label for="status">Durum</label>
+          <select id="status" name="status">
+            <option value="">Tümü</option>
+            <option value="AKTIF">Aktif</option>
+            <option value="PASIF">Pasif</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="business-id">İşletme no</label>
+          <input id="business-id" name="businessId" type="number" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="from">Teslim günü (başlangıç)</label>
+          <input id="from" name="from" type="date">
+        </div>
+        <div class="field">
+          <label for="to">Teslim günü (bitiş)</label>
+          <input id="to" name="to" type="date">
+        </div>
+        <div class="filter-actions">
+          <button type="submit" class="button">Filtrele</button>
+        </div>
+      </form>
+      <div id="outcome" class="message" hidden></div>
+      <div id="list-message" class="message" hidden></div>
+      <div id="list"></div>
+      <nav id="pager" class="pager" aria-label="Sayfalar" hidden></nav>
+    </main>
+  </body>
+</html>

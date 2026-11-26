@@ -19,6 +19,29 @@ export const ROLE_LABELS = Object.freeze({
   YONETICI: "Yönetici",
 });
 
+export const APPROVAL_STATUS_LABELS = Object.freeze({
+  BEKLEMEDE: "Onay bekliyor",
+  ONAYLANDI: "Onaylandı",
+  REDDEDILDI: "Reddedildi",
+});
+
+export const LISTING_STATUS_LABELS = Object.freeze({
+  AKTIF: "Aktif",
+  PASIF: "Pasif",
+});
+
+export function approvalStatusLabel(status) {
+  return APPROVAL_STATUS_LABELS[status] || status;
+}
+
+export function listingStatusLabel(status) {
+  return LISTING_STATUS_LABELS[status] || status;
+}
+
+export function activeLabel(active) {
+  return active ? "Aktif" : "Pasif";
+}
+
 export function orderStatusLabel(status) {
   return ORDER_STATUS_LABELS[status] || status;
 }
@@ -66,6 +89,28 @@ function instant(localDateTime) {
 
 export function formatDateTime(localDateTime) {
   return localDateTime ? DATE_TIME.format(instant(localDateTime)) : "";
+}
+
+/** An ISO date ("2026-10-14") as "14 Eki 2026". */
+export function formatDate(isoDate) {
+  return isoDate ? DATE.format(instant(isoDate + "T12:00:00")) : "";
+}
+
+const ISO_DATE = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** Today in Istanbul as an ISO date, whatever the time zone of the browser is. */
+export function todayIso() {
+  return ISO_DATE.format(new Date());
+}
+
+/** The first day of the current month in Istanbul as an ISO date. */
+export function monthStartIso() {
+  return todayIso().slice(0, 8) + "01";
+}
+
+/** Whether a local Istanbul date-time ("2026-10-14T19:00:00") lies in the future. */
+export function isFuture(localDateTime) {
+  return instant(localDateTime).getTime() > Date.now();
 }
 
 /** "14 Eki 2026 19:00 – 21:00", or both full date-times when the window spans two days. */

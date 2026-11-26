@@ -74,3 +74,23 @@ export async function whileSubmitting(form, action) {
     button.disabled = false;
   }
 }
+
+const AMOUNT = /^\d{1,8}(?:[.,]\d{1,2})?$/;
+
+/**
+ * Reads an amount field ("60", "60,5" or "60.50") in the API format with two decimals ("60.50"). Sets a field error
+ * and returns null when the value is not an amount with up to 8 integer digits and 2 decimals.
+ */
+export function amountValue(form, field, label) {
+  const value = form.elements.namedItem(field).value.trim();
+  if (!value) {
+    setFieldError(form, field, label + " zorunludur.");
+    return null;
+  }
+  if (!AMOUNT.test(value)) {
+    setFieldError(form, field, label + " geçerli bir tutar olmalıdır (en fazla 2 ondalık).");
+    return null;
+  }
+  const [whole, fraction = ""] = value.replace(",", ".").split(".");
+  return String(Number(whole)) + "." + fraction.padEnd(2, "0");
+}

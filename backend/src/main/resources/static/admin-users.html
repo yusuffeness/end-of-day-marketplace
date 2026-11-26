@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kullanıcılar · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/admin-users.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>Kullanıcılar</h1>
+      <form id="filter" class="filters" role="search">
+        <div class="field">
+          <label for="q">Ad, soyad veya e-posta</label>
+          <input id="q" name="q" type="search" maxlength="100">
+        </div>
+        <div class="field">
+          <label for="role">Rol</label>
+          <select id="role" name="role">
+            <option value="">Tümü</option>
+            <option value="MUSTERI">Müşteri</option>
+            <option value="ISLETME_YETKILISI">İşletme yetkilisi</option>
+            <option value="YONETICI">Yönetici</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="active">Durum</label>
+          <select id="active" name="active">
+            <option value="">Tümü</option>
+            <option value="true">Aktif</option>
+            <option value="false">Pasif</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button type="submit" class="button">Ara</button>
+        </div>
+      </form>
+      <p class="hint">Rol ve aktiflik değişiklikleri kullanıcının bir sonraki isteğinde geçerli olur.</p>
+      <div id="outcome" class="message" hidden></div>
+      <div id="list-message" class="message" hidden></div>
+      <div id="list"></div>
+      <nav id="pager" class="pager" aria-label="Sayfalar" hidden></nav>
+    </main>
+  </body>
+</html>

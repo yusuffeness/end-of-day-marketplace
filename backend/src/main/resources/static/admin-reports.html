@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Platform Raporları · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/admin-reports.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>Platform Raporları</h1>
+      <form id="report-form" class="inline-form" novalidate>
+        <div class="field">
+          <label for="report-from">Başlangıç</label>
+          <input id="report-from" name="from" type="date" required>
+        </div>
+        <div class="field">
+          <label for="report-to">Bitiş</label>
+          <input id="report-to" name="to" type="date" required>
+        </div>
+        <button type="submit" class="button">Raporu göster</button>
+      </form>
+      <p class="hint">Rapor, yalnızca raporlama görünümlerini okuyabilen ayrı veritabanı hesabıyla okunur. Siparişler oluşturulma günlerine göre sayılır; aralık en fazla 366 gün olabilir.</p>
+      <div id="report-message" class="message" hidden></div>
+      <div id="report"></div>
+    </main>
+  </body>
+</html>

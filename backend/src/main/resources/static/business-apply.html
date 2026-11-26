@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>İşletme Başvurusu · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/business-apply.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>İşletme Başvurusu</h1>
+
+      <form id="apply-form" class="form panel" novalidate>
+        <h2>Yeni başvuru</h2>
+        <p class="muted lead">Başvurunuz yönetici tarafından onaylandığında işletme yetkilisi menüsü açılır.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="apply-name">İşletme adı</label>
+            <input id="apply-name" name="name" type="text" maxlength="100" required>
+            <span class="field-error" data-error-for="name"></span>
+          </div>
+          <div class="field">
+            <label for="apply-type">Tür</label>
+            <select id="apply-type" name="type" required>
+              <option value="">Seçin</option>
+              <option value="FIRIN">Fırın</option>
+              <option value="KAFE">Kafe</option>
+              <option value="RESTORAN">Restoran</option>
+            </select>
+            <span class="field-error" data-error-for="type"></span>
+          </div>
+          <div class="field">
+            <label for="apply-city">Şehir</label>
+            <input id="apply-city" name="city" type="text" maxlength="50" required>
+            <span class="field-error" data-error-for="city"></span>
+          </div>
+          <div class="field">
+            <label for="apply-district">İlçe</label>
+            <input id="apply-district" name="district" type="text" maxlength="50" required>
+            <span class="field-error" data-error-for="district"></span>
+          </div>
+          <div class="field">
+            <label for="apply-phone">Telefon</label>
+            <input id="apply-phone" name="phone" type="tel" maxlength="20" required>
+            <span class="field-error" data-error-for="phone"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="apply-address">Adres</label>
+          <input id="apply-address" name="address" type="text" maxlength="255" required>
+          <span class="field-error" data-error-for="address"></span>
+        </div>
+        <div id="apply-message" class="message" hidden></div>
+        <button type="submit" class="button">Başvur</button>
+      </form>
+
+      <section class="panel">
+        <h2>Başvurularım</h2>
+        <div id="applications-message" class="message" hidden></div>
+        <div id="applications"></div>
+      </section>
+    </main>
+  </body>
+</html>

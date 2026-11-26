@@ -101,3 +101,27 @@ export function showPageError(text) {
   }
   box.replaceChildren(el("p", { text }));
 }
+
+export const ACCESS_DENIED = "Bu sayfaya erişim yetkiniz yok.";
+
+/** Whether the server refused the page itself: no right (403) or nothing behind the id in the address (404). */
+export function isAccessError(error) {
+  return error instanceof ApiError && (error.status === 403 || error.status === 404);
+}
+
+/**
+ * Replaces the content of the page with the server's refusal; only the page title stays. The menu only hides links,
+ * so a page opened by its address relies on this answer of the server.
+ */
+export function showAccessDenied(error) {
+  const main = document.getElementById("main");
+  if (!main) {
+    return;
+  }
+  const title = main.querySelector("h1");
+  const text = error.status === 404 ? "İstenen kayıt bulunamadı veya bu sayfaya erişim yetkiniz yok." : ACCESS_DENIED;
+  const box = el("div", { className: "message message-error", attrs: { id: "page-error", role: "alert" } }, [
+    el("p", { text }),
+  ]);
+  main.replaceChildren(...(title ? [title] : []), box);
+}

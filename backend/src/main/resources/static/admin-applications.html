@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>İşletme Başvuruları · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/admin-applications.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>İşletme Başvuruları</h1>
+      <form id="filter" class="inline-form">
+        <div class="field">
+          <label for="status">Onay durumu</label>
+          <select id="status" name="status">
+            <option value="BEKLEMEDE">Onay bekliyor</option>
+            <option value="ONAYLANDI">Onaylandı</option>
+            <option value="REDDEDILDI">Reddedildi</option>
+          </select>
+        </div>
+      </form>
+      <div id="outcome" class="message" hidden></div>
+      <div id="list-message" class="message" hidden></div>
+      <div id="list"></div>
+      <nav id="pager" class="pager" aria-label="Sayfalar" hidden></nav>
+    </main>
+  </body>
+</html>

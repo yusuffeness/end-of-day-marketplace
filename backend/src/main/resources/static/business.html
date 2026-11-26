@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>İşletme Yönetimi · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/business.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>İşletme Yönetimi</h1>
+      <div id="business-picker"></div>
+      <div id="business-content">
+        <p class="loading" role="status">Yükleniyor...</p>
+      </div>
+
+      <template id="business-template">
+        <form id="business-form" class="form panel" novalidate>
+          <h2>İşletme bilgileri</h2>
+          <p class="muted">
+            Tür: <span id="business-type"></span> · Onay durumu: <span id="business-approval"></span> ·
+            Durum: <span id="business-active"></span>
+          </p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="business-name">İşletme adı</label>
+              <input id="business-name" name="name" type="text" maxlength="100" required>
+              <span class="field-error" data-error-for="name"></span>
+            </div>
+            <div class="field">
+              <label for="business-phone">Telefon</label>
+              <input id="business-phone" name="phone" type="tel" maxlength="20" required>
+              <span class="field-error" data-error-for="phone"></span>
+            </div>
+            <div class="field">
+              <label for="business-city">Şehir</label>
+              <input id="business-city" name="city" type="text" maxlength="50" required>
+              <span class="field-error" data-error-for="city"></span>
+            </div>
+            <div class="field">
+              <label for="business-district">İlçe</label>
+              <input id="business-district" name="district" type="text" maxlength="50" required>
+              <span class="field-error" data-error-for="district"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="business-address">Adres</label>
+            <input id="business-address" name="address" type="text" maxlength="255" required>
+            <span class="field-error" data-error-for="address"></span>
+          </div>
+          <div id="business-message" class="message" hidden></div>
+          <button type="submit" class="button">Bilgileri kaydet</button>
+        </form>
+
+        <form id="listing-form" class="form panel" novalidate>
+          <h2>Yeni paket ilanı</h2>
+          <div id="listing-disabled" class="message message-info" hidden></div>
+          <fieldset id="listing-fields">
+            <div class="field">
+              <label for="listing-title">Başlık</label>
+              <input id="listing-title" name="title" type="text" maxlength="100" required>
+              <span class="field-error" data-error-for="title"></span>
+            </div>
+            <div class="field">
+              <label for="listing-description">Açıklama</label>
+              <textarea id="listing-description" name="description" maxlength="2000" rows="3" required></textarea>
+              <span class="field-error" data-error-for="description"></span>
+            </div>
+            <div class="field">
+              <label for="listing-allergens">Alerjen bilgisi</label>
+              <textarea id="listing-allergens" name="allergenInfo" maxlength="500" rows="2" required aria-describedby="listing-allergens-hint"></textarea>
+              <span class="hint" id="listing-allergens-hint">Zorunludur. Alerjen yoksa bunu belirtin.</span>
+              <span class="field-error" data-error-for="allergenInfo"></span>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="listing-normal-price">Normal fiyat (TL)</label>
+                <input id="listing-normal-price" name="normalPrice" type="text" inputmode="decimal" required>
+                <span class="field-error" data-error-for="normalPrice"></span>
+              </div>
+              <div class="field">
+                <label for="listing-sale-price">Satış fiyatı (TL)</label>
+                <input id="listing-sale-price" name="salePrice" type="text" inputmode="decimal" required>
+                <span class="field-error" data-error-for="salePrice"></span>
+              </div>
+              <div class="field">
+                <label for="listing-quantity">Toplam adet</label>
+                <input id="listing-quantity" name="totalQuantity" type="number" min="1" max="10000" step="1" required>
+                <span class="field-error" data-error-for="totalQuantity"></span>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="listing-date">Teslim günü</label>
+                <input id="listing-date" name="pickupDate" type="date" required>
+                <span class="field-error" data-error-for="pickupDate"></span>
+              </div>
+              <div class="field">
+                <label for="listing-start">Teslim başlangıcı</label>
+                <input id="listing-start" name="pickupStart" type="time" required>
+                <span class="field-error" data-error-for="pickupStart"></span>
+              </div>
+              <div class="field">
+                <label for="listing-end">Teslim bitişi</label>
+                <input id="listing-end" name="pickupEnd" type="time" required>
+                <span class="field-error" data-error-for="pickupEnd"></span>
+              </div>
+            </div>
+            <p class="hint">Teslim aralığı gelecekte başlamalı ve aynı gün bitmelidir. Saatler İstanbul saatidir.</p>
+            <div id="listing-message" class="message" hidden></div>
+            <button type="submit" class="button">İlanı yayınla</button>
+          </fieldset>
+        </form>
+
+        <section class="panel">
+          <h2>İlanlar</h2>
+          <form id="listing-filter" class="inline-form">
+            <div class="field">
+              <label for="listing-status">Durum</label>
+              <select id="listing-status" name="status">
+                <option value="">Tümü</option>
+                <option value="AKTIF">Aktif</option>
+                <option value="PASIF">Pasif</option>
+              </select>
+            </div>
+          </form>
+          <div id="listings-message" class="message" hidden></div>
+          <div id="listings"></div>
+          <nav id="listings-pager" class="pager" aria-label="İlan sayfaları" hidden></nav>
+        </section>
+      </template>
+    </main>
+  </body>
+</html>
