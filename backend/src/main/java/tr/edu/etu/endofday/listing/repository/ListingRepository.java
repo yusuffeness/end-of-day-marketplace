@@ -1,5 +1,6 @@
 package tr.edu.etu.endofday.listing.repository;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -54,15 +55,34 @@ public class ListingRepository {
 
     private static final String COUNT = "SELECT COUNT(*) " + SEARCH_FROM_WHERE;
 
-    private static final String SELECT_DETAIL = """
+    private static final String DETAIL_COLUMNS = """
             SELECT p.ilan_id, p.baslik, p.aciklama, p.alerjen_bilgisi, p.normal_fiyat, p.satis_fiyati, p.toplam_adet,
                    p.kalan_adet, p.teslim_baslangic, p.teslim_bitis, p.durum, p.olusturulma_zamani,
                    i.isletme_id, i.yetkili_id, i.isletme_adi, i.isletme_turu, i.sehir, i.ilce, i.adres, i.telefon,
                    i.onay_durumu, i.aktif_mi
+            """;
+
+    private static final String DETAIL_FROM = """
             FROM PAKET_ILANI p
             JOIN ISLETME i ON i.isletme_id = p.isletme_id
-            WHERE p.ilan_id = :id
             """;
+
+    private static final String SELECT_DETAIL = DETAIL_COLUMNS + DETAIL_FROM + "WHERE p.ilan_id = :id";
+
+    /** Every listing, active or not, for the owner's and the administrator's lists; every filter is optional. */
+    private static final String INSPECTION_WHERE = """
+            WHERE (:businessId IS NULL OR p.isletme_id = :businessId)
+              AND (:status IS NULL OR p.durum = :status)
+              AND (:from IS NULL OR p.teslim_baslangic >= :from)
+              AND (:to IS NULL OR p.teslim_baslangic < :to)
+            """;
+
+    private static final String INSPECTION = DETAIL_COLUMNS + DETAIL_FROM + INSPECTION_WHERE + """
+            ORDER BY p.olusturulma_zamani DESC, p.ilan_id DESC
+            LIMIT :limit OFFSET :offset
+            """;
+
+    private static final String INSPECTION_COUNT = "SELECT COUNT(*) " + DETAIL_FROM + INSPECTION_WHERE;
 
     private final JdbcClient jdbcClient;
 
@@ -126,6 +146,44 @@ public class ListingRepository {
         return updated == 1;
     }
 
+    /**
+     * Every listing that matches the filter, active or not, newest first.
+     *
+     * @param from inclusive start of the pickup start range, or {@code null}
+     * @param to exclusive end of the pickup start range, or {@code null}
+     */
+    public List<ListingDetail> findForInspection(
+            Long businessId, ListingStatus status, LocalDateTime from, LocalDateTime to, int limit, long offset) {
+        return withInspectionFilter(jdbcClient.sql(INSPECTION), businessId, status, from, to)
+                .param("limit", limit)
+                .param("offset", offset)
+                .query(ListingRepository::mapDetail)
+                .list();
+    }
+
+    public long countForInspection(Long businessId, ListingStatus status, LocalDateTime from, LocalDateTime to) {
+        return withInspectionFilter(jdbcClient.sql(INSPECTION_COUNT), businessId, status, from, to)
+                .query(Long.class)
+                .single();
+    }
+
+    /** Changes the sale price for future orders; order items keep the unit price they were bought at. */
+    public void updateSalePrice(long id, BigDecimal salePrice) {
+        jdbcClient
+                .sql("UPDATE PAKET_ILANI SET satis_fiyati = :salePrice WHERE ilan_id = :id")
+                .param("salePrice", salePrice)
+                .param("id", id)
+                .update();
+    }
+
+    /** Sets the listing to PASIF; confirmed orders keep their items. */
+    public void deactivate(long id) {
+        jdbcClient
+                .sql("UPDATE PAKET_ILANI SET durum = 'PASIF' WHERE ilan_id = :id")
+                .param("id", id)
+                .update();
+    }
+
     /** Returns units of a cancelled order; the CHECK constraint keeps kalan_adet within toplam_adet. */
     public void increaseStock(long id, int quantity) {
         jdbcClient
@@ -168,6 +226,18 @@ public class ListingRepository {
                 .param("type", filter.type() == null ? null : filter.type().name())
                 .param("minPrice", filter.minPrice())
                 .param("maxPrice", filter.maxPrice());
+    }
+
+    private static JdbcClient.StatementSpec withInspectionFilter(
+            JdbcClient.StatementSpec spec,
+            Long businessId,
+            ListingStatus status,
+            LocalDateTime from,
+            LocalDateTime to) {
+        return spec.param("businessId", businessId)
+                .param("status", status == null ? null : status.name())
+                .param("from", from)
+                .param("to", to);
     }
 
     private static ListingSummary mapSummary(ResultSet rs, int rowNum) throws SQLException {

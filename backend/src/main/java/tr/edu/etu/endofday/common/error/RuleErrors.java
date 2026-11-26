@@ -98,12 +98,41 @@ public final class RuleErrors {
         return conflict("EOD-024", "Bu sipariş zaten değerlendirildi.");
     }
 
-    /** EOD-025: the pickup window of a new listing does not start before it ends or does not end in the future. */
+    /** EOD-025: the pickup window of a new listing must start in the future, before it ends, and end on the same day. */
     public static ApiException invalidPickupWindow() {
         return new ApiException(
                 HttpStatus.BAD_REQUEST,
                 "EOD-025",
-                "Teslim alma aralığının başlangıcı bitişinden önce olmalı ve bitişi gelecekte olmalıdır.");
+                "Teslim alma aralığı gelecekte başlamalı, bitişinden önce başlamalı ve aynı gün bitmelidir.");
+    }
+
+    /** EOD-026: only a pending application (BEKLEMEDE) can be approved or rejected. */
+    public static ApiException applicationNotPending() {
+        return conflict("EOD-026", "Yalnızca onay bekleyen bir başvuru onaylanabilir veya reddedilebilir.");
+    }
+
+    /** EOD-027: an administrator cannot deactivate their own account. */
+    public static ApiException cannotDeactivateOwnAccount() {
+        return conflict("EOD-027", "Yönetici kendi hesabını pasife alamaz.");
+    }
+
+    /** EOD-028: an administrator cannot revoke their own YONETICI role. */
+    public static ApiException cannotRevokeOwnAdministratorRole() {
+        return conflict("EOD-028", "Yönetici kendi yönetici rolünü kaldıramaz.");
+    }
+
+    /** EOD-029: a new sale price must be greater than zero and lower than the normal price. */
+    public static ApiException salePriceNotDiscounted() {
+        return new ApiException(
+                HttpStatus.BAD_REQUEST, "EOD-029", "Satış fiyatı sıfırdan büyük ve normal fiyattan düşük olmalıdır.");
+    }
+
+    /** EOD-030: a report range must not start after it ends and must cover at most 366 days. */
+    public static ApiException invalidReportRange() {
+        return new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "EOD-030",
+                "Rapor tarih aralığı geçersiz: başlangıç bitişten sonra olamaz ve aralık en fazla 366 gün olabilir.");
     }
 
     private static ApiException conflict(String code, String detail) {

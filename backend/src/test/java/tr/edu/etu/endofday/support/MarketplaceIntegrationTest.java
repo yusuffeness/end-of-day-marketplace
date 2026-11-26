@@ -74,11 +74,50 @@ public abstract class MarketplaceIntegrationTest extends IntegrationTest {
     /** A customer who also holds the ISLETME_YETKILISI role. */
     protected Account signUpOwner(String localPart) throws Exception {
         Account account = signUpCustomer(localPart);
+        grantRole(account.id(), "ISLETME_YETKILISI");
+        return account;
+    }
+
+    /** A customer who also holds the YONETICI role. */
+    protected Account signUpAdmin(String localPart) throws Exception {
+        Account account = signUpCustomer(localPart);
+        grantRole(account.id(), "YONETICI");
+        return account;
+    }
+
+    /** A signed-in customer with the given names, for tests that look at how names are shown. */
+    protected Account signUpCustomer(String localPart, String firstName, String lastName) throws Exception {
+        String email = TestAccounts.uniqueEmail(localPart);
+        ApiClient client = new ApiClient(mockMvc);
+        client.fetchCsrfToken();
+        client.register(firstName, lastName, email, TestAccounts.PASSWORD).andExpect(status().isCreated());
+        client.login(email, TestAccounts.PASSWORD).andExpect(status().isOk());
+        return new Account(TestAccounts.idOf(email), email, client);
+    }
+
+    protected static void grantRole(long userId, String roleName) {
         db().sql("""
                         INSERT INTO KULLANICI_ROL (kullanici_id, rol_id)
-                        SELECT :userId, rol_id FROM ROL WHERE rol_adi = 'ISLETME_YETKILISI'
-                        """).param("userId", account.id()).update();
-        return account;
+                        SELECT :userId, rol_id FROM ROL WHERE rol_adi = :roleName
+                        """).param("userId", userId).param("roleName", roleName).update();
+    }
+
+    protected static boolean hasRole(long userId, String roleName) {
+        return db().sql("""
+                        SELECT EXISTS (SELECT 1 FROM KULLANICI_ROL kr JOIN ROL r ON r.rol_id = kr.rol_id
+                                       WHERE kr.kullanici_id = :userId AND r.rol_adi = :roleName)
+                        """)
+                .param("userId", userId)
+                .param("roleName", roleName)
+                .query(Boolean.class)
+                .single();
+    }
+
+    protected static String approvalOf(long businessId) {
+        return db().sql("SELECT onay_durumu FROM ISLETME WHERE isletme_id = :id")
+                .param("id", businessId)
+                .query(String.class)
+                .single();
     }
 
     /** An approved and active bakery in the test's city. */
