@@ -52,7 +52,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/actuator/health")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/css/**", "/js/**", "/favicon.ico")
+                        // The pages of the browser client are static files in the root directory; the data they show
+                        // comes from /api/v1, which keeps its own rules below.
+                        .requestMatchers(HttpMethod.GET, "/", "/*.html", "/css/**", "/js/**", "/favicon.ico")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf")
                         .permitAll()

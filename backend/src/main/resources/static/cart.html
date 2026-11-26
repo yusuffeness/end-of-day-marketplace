@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sepet · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/cart.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>Sepet</h1>
+      <div id="cart-message" class="message" hidden></div>
+      <section id="cart" hidden>
+        <p id="cart-business" class="card-business"></p>
+        <ul id="cart-items" class="rows"></ul>
+        <p class="total">Toplam: <strong id="cart-total"></strong></p>
+        <p class="muted">Tutar, sipariş verildiği anda veritabanındaki satış fiyatlarıyla yeniden hesaplanır. Ödeme demo olarak yapılır.</p>
+        <div class="actions">
+          <button type="button" id="place-order" class="button">Siparişi onayla ve öde</button>
+          <button type="button" id="empty-cart" class="button button-secondary">Sepeti boşalt</button>
+        </div>
+      </section>
+      <section id="order-result" class="panel" hidden>
+        <h2>Siparişiniz alındı</h2>
+        <dl class="details">
+          <dt>Teslim kodu</dt>
+          <dd id="result-code" class="pickup-code"></dd>
+          <dt>Teslim alma aralığı</dt>
+          <dd id="result-window"></dd>
+          <dt>İşletme</dt>
+          <dd id="result-business"></dd>
+          <dt>Ödenen tutar</dt>
+          <dd id="result-total"></dd>
+        </dl>
+        <p>Teslim kodunu işletmeye söyleyerek paketinizi alabilirsiniz.</p>
+        <p><a href="/orders.html">Siparişlerime git</a></p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -35,7 +37,41 @@ class SecurityIntegrationTest extends IntegrationTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 // The page declares its encoding with <meta charset="utf-8">, so decode it as UTF-8.
                 .andExpect(result -> assertThat(result.getResponse().getContentAsString(StandardCharsets.UTF_8))
-                        .contains("<meta charset=\"utf-8\">", "Yakında hizmetinizde."));
+                        .contains("<meta charset=\"utf-8\">", "<script type=\"module\" src=\"/js/pages/home.js\">"));
+    }
+
+    /** Every page of the browser client opens without a session; the page itself then asks /api/v1/me. */
+    @ParameterizedTest
+    @ValueSource(
+            strings = {"/login.html", "/index.html", "/listing.html", "/cart.html", "/orders.html", "/profile.html"})
+    void clientPagesArePublicStaticFiles(String page) throws Exception {
+        mockMvc.perform(get(page))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/js/api.js", "/js/layout.js", "/js/pages/login.js", "/js/pages/orders.js"})
+    void clientModulesArePublic(String module) throws Exception {
+        mockMvc.perform(get(module))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/javascript"));
+    }
+
+    /** Opening the pages does not open the API: its rules are unchanged. */
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/v1/me", "/api/v1/listings", "/api/v1/orders", "/api/v1/admin/users"})
+    void apiStillRequiresSignIn(String path) throws Exception {
+        mockMvc.perform(get(path))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("EOD-401"));
+    }
+
+    /** Only HTML files directly in the root are public; anything else outside the static folders is not. */
+    @Test
+    void otherPathsStayProtected() throws Exception {
+        mockMvc.perform(get("/api/v1/listings.html")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/private/page.html")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -47,7 +83,7 @@ class SecurityIntegrationTest extends IntegrationTest {
 
     @Test
     void scriptIsPublic() throws Exception {
-        mockMvc.perform(get("/js/app.js"))
+        mockMvc.perform(get("/js/format.js"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/javascript"));
     }

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Siparişlerim · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/orders.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>Siparişlerim</h1>
+      <form id="status-filter" class="inline-form">
+        <div class="field">
+          <label for="status">Durum</label>
+          <select id="status" name="status">
+            <option value="">Tümü</option>
+            <option value="ONAYLANDI">Onaylandı, teslim bekliyor</option>
+            <option value="TESLIM_EDILDI">Teslim edildi</option>
+            <option value="IPTAL_EDILDI">İptal edildi</option>
+            <option value="TESLIM_ALINMADI">Teslim alınmadı</option>
+          </select>
+        </div>
+      </form>
+      <div id="orders-message" class="message" hidden></div>
+      <ul id="orders" class="orders"></ul>
+      <nav id="pager" class="pager" aria-label="Sayfalar" hidden>
+        <button type="button" id="previous-page" class="button button-secondary">Önceki</button>
+        <span id="page-info"></span>
+        <button type="button" id="next-page" class="button button-secondary">Sonraki</button>
+      </nav>
+    </main>
+  </body>
+</html>

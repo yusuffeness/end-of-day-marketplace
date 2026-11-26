@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profil · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/profile.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container narrow">
+      <h1>Profil</h1>
+
+      <form id="profile-form" class="form panel" novalidate>
+        <h2>Bilgilerim</h2>
+        <div class="field">
+          <label for="profile-email">E-posta</label>
+          <input id="profile-email" name="email" type="email" readonly aria-describedby="profile-email-hint">
+          <span class="hint" id="profile-email-hint">E-posta adresi değiştirilemez.</span>
+        </div>
+        <div class="field">
+          <label for="profile-first-name">Ad</label>
+          <input id="profile-first-name" name="firstName" type="text" maxlength="50" autocomplete="given-name" required aria-describedby="profile-first-name-error">
+          <span class="field-error" id="profile-first-name-error" data-error-for="firstName"></span>
+        </div>
+        <div class="field">
+          <label for="profile-last-name">Soyad</label>
+          <input id="profile-last-name" name="lastName" type="text" maxlength="50" autocomplete="family-name" required aria-describedby="profile-last-name-error">
+          <span class="field-error" id="profile-last-name-error" data-error-for="lastName"></span>
+        </div>
+        <div class="field">
+          <label for="profile-phone">Telefon (isteğe bağlı)</label>
+          <input id="profile-phone" name="phone" type="tel" maxlength="20" autocomplete="tel" aria-describedby="profile-phone-error">
+          <span class="field-error" id="profile-phone-error" data-error-for="phone"></span>
+        </div>
+        <p class="muted">Rolleriniz: <span id="profile-roles"></span></p>
+        <div id="profile-message" class="message" hidden></div>
+        <button type="submit" class="button">Bilgileri kaydet</button>
+      </form>
+
+      <form id="password-form" class="form panel" novalidate>
+        <h2>Parola değiştir</h2>
+        <div class="field">
+          <label for="current-password">Mevcut parola</label>
+          <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required aria-describedby="current-password-error">
+          <span class="field-error" id="current-password-error" data-error-for="currentPassword"></span>
+        </div>
+        <div class="field">
+          <label for="new-password">Yeni parola</label>
+          <input id="new-password" name="newPassword" type="password" autocomplete="new-password" required aria-describedby="new-password-hint new-password-error">
+          <span class="hint" id="new-password-hint">8 ile 72 karakter arası, en az bir harf ve bir rakam.</span>
+          <span class="field-error" id="new-password-error" data-error-for="newPassword"></span>
+        </div>
+        <div class="field">
+          <label for="new-password-repeat">Yeni parola (tekrar)</label>
+          <input id="new-password-repeat" name="newPasswordRepeat" type="password" autocomplete="new-password" required aria-describedby="new-password-repeat-error">
+          <span class="field-error" id="new-password-repeat-error" data-error-for="newPasswordRepeat"></span>
+        </div>
+        <div id="password-message" class="message" hidden></div>
+        <button type="submit" class="button">Parolayı değiştir</button>
+      </form>
+    </main>
+  </body>
+</html>

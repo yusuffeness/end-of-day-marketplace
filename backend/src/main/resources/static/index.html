@@ -3,12 +3,55 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gün Sonu</title>
+    <title>Paketler · Gün Sonu</title>
     <link rel="stylesheet" href="/css/main.css">
-    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/pages/home.js"></script>
   </head>
   <body>
-    <h1>Gün Sonu</h1>
-    <p>Yakında hizmetinizde.</p>
+    <header id="site-header" class="site-header"></header>
+    <main id="main" class="container">
+      <h1>Alınabilir paketler</h1>
+      <form id="filters" class="filters" novalidate>
+        <div class="field">
+          <label for="city">Şehir</label>
+          <input id="city" name="city" type="text" maxlength="50" autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <label for="district">İlçe</label>
+          <input id="district" name="district" type="text" maxlength="50" autocomplete="address-level3">
+        </div>
+        <div class="field">
+          <label for="type">İşletme türü</label>
+          <select id="type" name="type">
+            <option value="">Tümü</option>
+            <option value="FIRIN">Fırın</option>
+            <option value="KAFE">Kafe</option>
+            <option value="RESTORAN">Restoran</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="minPrice">En düşük fiyat (TL)</label>
+          <input id="minPrice" name="minPrice" type="text" inputmode="decimal" placeholder="ör. 30" aria-describedby="minPrice-error">
+          <span class="field-error" id="minPrice-error" data-error-for="minPrice"></span>
+        </div>
+        <div class="field">
+          <label for="maxPrice">En yüksek fiyat (TL)</label>
+          <input id="maxPrice" name="maxPrice" type="text" inputmode="decimal" placeholder="ör. 100" aria-describedby="maxPrice-error">
+          <span class="field-error" id="maxPrice-error" data-error-for="maxPrice"></span>
+        </div>
+        <div class="filter-actions">
+          <button type="submit" class="button">Filtrele</button>
+          <button type="button" id="reset-filters" class="button button-secondary">Temizle</button>
+        </div>
+      </form>
+      <div id="listings-message" class="message" hidden></div>
+      <p id="result-count" class="muted" hidden></p>
+      <ul id="listings" class="cards"></ul>
+      <nav id="pager" class="pager" aria-label="Sayfalar" hidden>
+        <button type="button" id="previous-page" class="button button-secondary">Önceki</button>
+        <span id="page-info"></span>
+        <button type="button" id="next-page" class="button button-secondary">Sonraki</button>
+      </nav>
+    </main>
   </body>
 </html>

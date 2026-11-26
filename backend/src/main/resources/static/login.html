@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Giriş · Gün Sonu</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <script type="module" src="/js/pages/login.js"></script>
+  </head>
+  <body>
+    <header id="site-header" class="site-header">
+      <div class="topbar"><a class="brand" href="/index.html">Gün Sonu</a></div>
+    </header>
+    <main id="main" class="container narrow">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tab-login" class="tab" aria-selected="true" aria-controls="login-form">Giriş yap</button>
+        <button type="button" role="tab" id="tab-register" class="tab" aria-selected="false" aria-controls="register-form">Kayıt ol</button>
+      </div>
+
+      <div id="auth-message" class="message" hidden></div>
+
+      <form id="login-form" class="form panel" role="tabpanel" aria-labelledby="tab-login" novalidate>
+        <h1>Giriş yap</h1>
+        <div class="field">
+          <label for="login-email">E-posta</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" required aria-describedby="login-email-error">
+          <span class="field-error" id="login-email-error" data-error-for="email"></span>
+        </div>
+        <div class="field">
+          <label for="login-password">Parola</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required aria-describedby="login-password-error">
+          <span class="field-error" id="login-password-error" data-error-for="password"></span>
+        </div>
+        <button type="submit" class="button">Giriş yap</button>
+      </form>
+
+      <form id="register-form" class="form panel" role="tabpanel" aria-labelledby="tab-register" novalidate hidden>
+        <h1>Kayıt ol</h1>
+        <div class="field">
+          <label for="register-first-name">Ad</label>
+          <input id="register-first-name" name="firstName" type="text" maxlength="50" autocomplete="given-name" required aria-describedby="register-first-name-error">
+          <span class="field-error" id="register-first-name-error" data-error-for="firstName"></span>
+        </div>
+        <div class="field">
+          <label for="register-last-name">Soyad</label>
+          <input id="register-last-name" name="lastName" type="text" maxlength="50" autocomplete="family-name" required aria-describedby="register-last-name-error">
+          <span class="field-error" id="register-last-name-error" data-error-for="lastName"></span>
+        </div>
+        <div class="field">
+          <label for="register-email">E-posta</label>
+          <input id="register-email" name="email" type="email" maxlength="254" autocomplete="email" required aria-describedby="register-email-error">
+          <span class="field-error" id="register-email-error" data-error-for="email"></span>
+        </div>
+        <div class="field">
+          <label for="register-phone">Telefon (isteğe bağlı)</label>
+          <input id="register-phone" name="phone" type="tel" maxlength="20" autocomplete="tel" aria-describedby="register-phone-error">
+          <span class="field-error" id="register-phone-error" data-error-for="phone"></span>
+        </div>
+        <div class="field">
+          <label for="register-password">Parola</label>
+          <input id="register-password" name="password" type="password" autocomplete="new-password" required aria-describedby="register-password-hint register-password-error">
+          <span class="hint" id="register-password-hint">8 ile 72 karakter arası, en az bir harf ve bir rakam.</span>
+          <span class="field-error" id="register-password-error" data-error-for="password"></span>
+        </div>
+        <div class="field">
+          <label for="register-password-repeat">Parola (tekrar)</label>
+          <input id="register-password-repeat" name="passwordRepeat" type="password" autocomplete="new-password" required aria-describedby="register-password-repeat-error">
+          <span class="field-error" id="register-password-repeat-error" data-error-for="passwordRepeat"></span>
+        </div>
+        <button type="submit" class="button">Kayıt ol</button>
+      </form>
+    </main>
+  </body>
+</html>
